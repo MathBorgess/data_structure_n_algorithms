@@ -10,21 +10,14 @@ struct Node
 class LinkedList
 {
 private:
-    Node sentinel = {0, nullptr, nullptr};
+    Node sentinel = {0, &sentinel, &sentinel};
 
 public:
     void enqueue(Node *node)
     {
         node->prev = &sentinel;
         node->next = sentinel.next;
-        if (sentinel.next != nullptr)
-        {
-            sentinel.next->prev = node;
-        }
-        if (sentinel.prev == nullptr)
-        {
-            sentinel.prev = node;
-        }
+        sentinel.next->prev = node;
         sentinel.next = node;
     }
 
@@ -66,6 +59,9 @@ int main()
     std::cout << "Linked List: ";
     list.search();
     list.dequeue();
+    list.search();
+    list.dequeue();
+    list.search();
 
     return 0;
 }
