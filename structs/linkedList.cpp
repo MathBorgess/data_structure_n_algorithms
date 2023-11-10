@@ -11,6 +11,7 @@ class LinkedList
 {
 private:
     Node sentinel = {0, &sentinel, &sentinel};
+    int size_ = 0;
 
 public:
     void enqueue(Node *node)
@@ -47,6 +48,8 @@ public:
         }
         std::cout << std::endl;
     }
+
+    int size() const { return size_; }
 };
 
 int main()
