@@ -12,6 +12,7 @@ class MathStack
 {
 private:
     Node sentinel = {0, &sentinel, &sentinel};
+    int size = 0;
 
 public:
     void push(Node *node)
@@ -20,6 +21,7 @@ public:
         node->prev = sentinel.prev;
         sentinel.prev->next = node;
         sentinel.prev = node;
+        size++;
     }
 
     Node *pop()
@@ -27,15 +29,16 @@ public:
         sentinel.prev->prev->next = &sentinel;
         Node *item = sentinel.prev;
         sentinel.prev = sentinel.prev->prev;
+        size--;
         return item;
     }
 
     void reduce()
     {
         Node *node = sentinel.prev;
-        while (node != &sentinel && node->prev != &sentinel && ((node->number % 2) == (node->prev->number % 2)))
+        int num = node->number - node->prev->number;
+        while (node != &sentinel && node->prev != &sentinel && num % 2 == 0)
         {
-            int num = node->number - node->prev->number;
             if (num < 0)
             {
                 num *= -1;
@@ -48,6 +51,7 @@ public:
                 push(newNode);
             }
             node = sentinel.prev;
+            num = node->number - node->prev->number;
         }
     }
     void search()
@@ -59,6 +63,16 @@ public:
             node = node->next;
         }
         std::cout << std::endl;
+    }
+
+    int getSize()
+    {
+        return size;
+    }
+
+    int getTop()
+    {
+        return sentinel.prev->number;
     }
 };
 
@@ -75,15 +89,20 @@ int main()
         {
             Node *node = new Node{numbers, nullptr, nullptr};
             stack.push(node);
-            cout << "search" << endl;
-            stack.search();
-            cout << "reduce" << endl;
             stack.reduce();
-            cout << "search" << endl;
-            stack.search();
             cin >> numbers;
         } while (numbers != 0);
-        stack.search();
+        int top;
+        int size = stack.getSize();
+        if (size == 0)
+        {
+            top = -1;
+        }
+        else
+        {
+            top = stack.getTop();
+        }
+        cout << "Pilha " << i + 1 << ": " << size << " " << top << endl;
     }
     return 0;
 }
