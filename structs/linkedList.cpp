@@ -20,6 +20,7 @@ public:
         node->next = sentinel.next;
         sentinel.next->prev = node;
         sentinel.next = node;
+        size++;
     }
 
     void push(Node *node)
@@ -28,10 +29,12 @@ public:
         node->prev = sentinel.prev;
         sentinel.prev->next = node;
         sentinel.prev = node;
+        size++;
     }
 
     Node *remove()
     {
+        size--;
         sentinel.prev->prev->next = &sentinel;
         Node *item = sentinel.prev;
         sentinel.prev = sentinel.prev->prev;
