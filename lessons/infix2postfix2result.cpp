@@ -123,6 +123,7 @@ public:
     }
 
     int size() const { return size_; }
+    /
 };
 
 int main()
