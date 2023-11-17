@@ -56,7 +56,8 @@ public:
     static void *delNode(Node *node)
     {
         Node *auxNode;
-        if (node->height <= 1)
+        node->height = max(height(node->leftChild), height(node->rightChild)) + 1;
+        if (node->height == 0)
         {
             if (node->antecessor->leftChild == node)
             {
@@ -66,12 +67,13 @@ public:
             {
                 node->antecessor->rightChild = nullptr;
             }
-            AVLBinaryTree::order(node->antecessor, -1);
-            node->antecessor->height = max(height(node->antecessor->leftChild), height(node->antecessor->rightChild)) + 1;
+            node->antecessor->height = 1 + max(height(node->antecessor->leftChild), height(node->antecessor->rightChild));
             int balance = getBalance(node->antecessor);
             int childBalance;
             if (balance > 1)
             {
+                node->antecessor->leftChild->height = 1 + max(height(node->antecessor->leftChild->leftChild), height(node->antecessor->leftChild->rightChild));
+
                 childBalance = getBalance(node->antecessor->leftChild);
                 if (childBalance < -1)
                 {
@@ -81,6 +83,8 @@ public:
             }
             else if (balance < -1)
             {
+                node->antecessor->rightChild->height = 1 + max(height(node->antecessor->rightChild->leftChild), height(node->antecessor->rightChild->rightChild));
+
                 childBalance = getBalance(node->antecessor->rightChild);
                 if (childBalance > 1)
                 {
@@ -104,7 +108,7 @@ public:
     {
         if (node == nullptr)
         {
-            return 0; // Assuming leaf nodes have height 0
+            return -1; // Assuming leaf nodes have height 0
         }
         return node->height;
     }
@@ -120,7 +124,6 @@ public:
 
     static Node *insert(Node *tree, Node *node)
     {
-
         if (tree == nullptr)
         {
             return node;
@@ -128,23 +131,23 @@ public:
 
         if (node->data < tree->data)
         {
+            node->antecessor = tree;
             tree->leftChild = insert(tree->leftChild, node);
-            tree->leftChild->antecessor = tree;
         }
         else if (node->data > tree->data)
         {
+            node->antecessor = tree;
             tree->rightChild = insert(tree->rightChild, node);
-            tree->rightChild->antecessor = tree;
         }
         else
             return tree;
+
         tree->height = 1 + max(height(tree->leftChild), height(tree->rightChild));
 
         int balance = getBalance(tree);
-
         if (balance > 1)
         {
-            if (node->data >= tree->leftChild->data)
+            if (node->data > tree->leftChild->data)
             {
                 tree->leftChild = leftRotate(tree->leftChild);
             }
@@ -152,7 +155,7 @@ public:
         }
         else if (balance < -1)
         {
-            if (node->data <= tree->rightChild->data)
+            if (node->data < tree->rightChild->data)
             {
                 tree->rightChild = rightRotate(tree->rightChild);
             }
@@ -166,13 +169,13 @@ public:
     {
         subtree->rightChild->antecessor = subtree->antecessor;
         subtree->antecessor = subtree->rightChild;
+        if (subtree->rightChild->leftChild != nullptr)
+            subtree->rightChild->leftChild->antecessor = subtree;
         subtree->rightChild = subtree->rightChild->leftChild;
-        if (subtree->antecessor->leftChild)
-            subtree->antecessor->leftChild->antecessor = subtree;
         subtree->antecessor->leftChild = subtree;
         subtree = subtree->antecessor;
-        subtree->height = max(height(subtree->leftChild), height(subtree->rightChild)) + 1;
-        subtree->leftChild->height = max(height(subtree->leftChild->leftChild), height(subtree->leftChild->rightChild)) + 1;
+        subtree->height = 1 + max(height(subtree->leftChild), height(subtree->rightChild));
+        subtree->leftChild->height = 1 + max(height(subtree->leftChild->leftChild), height(subtree->leftChild->rightChild)) + 1;
         return subtree;
     }
 
@@ -180,13 +183,13 @@ public:
     {
         subtree->leftChild->antecessor = subtree->antecessor;
         subtree->antecessor = subtree->leftChild;
+        if (subtree->leftChild->rightChild != nullptr)
+            subtree->leftChild->rightChild->antecessor = subtree;
         subtree->leftChild = subtree->leftChild->rightChild;
-        if (subtree->antecessor->rightChild)
-            subtree->antecessor->rightChild->antecessor = subtree;
         subtree->antecessor->rightChild = subtree;
         subtree = subtree->antecessor;
-        subtree->height = max(height(subtree->leftChild), height(subtree->rightChild)) + 1;
-        subtree->rightChild->height = max(height(subtree->rightChild->leftChild), height(subtree->rightChild->rightChild)) + 1;
+        subtree->height = 1 + max(height(subtree->leftChild), height(subtree->rightChild));
+        subtree->rightChild->height = 1 + max(height(subtree->rightChild->leftChild), height(subtree->rightChild->rightChild)) + 1;
 
         return subtree;
     }
@@ -195,7 +198,6 @@ public:
     {
         return new Node{data, 0, nullptr, nullptr, nullptr};
     }
-
     // critical == 1 -> max node, critical == -1 -> min
     static Node *critialNode(Node *subtree, int critical)
     {
@@ -253,7 +255,7 @@ public:
         }
     }
 
-    static Node *antecessor(Node *subtree)
+    static Node *predecessor(Node *subtree)
     {
         Node *auxNode;
         if (subtree->leftChild != nullptr)
@@ -277,7 +279,6 @@ public:
             return auxNode2;
         }
     }
-
     // value == -1 -> preorder, value == 0 -> inorder, value == 1 -> postorder
     static void order(Node *root, int value)
     {
@@ -315,8 +316,17 @@ int main()
     tree.add(3);
     tree.add(4);
     tree.add(5);
+    // AVLBinaryTree::order(tree.root(), 0);
+    // cout << tree.find(3)->antecessor->rightChild->data << endl;
     tree.add(6);
-    tree.remove(1);
+    tree.add(7);
+    tree.add(8);
+    tree.add(9);
+    AVLBinaryTree::order(tree.root(), 0);
+
+    // problem with 2 n 3 n 4 n 6
+    tree.remove(7);
+    cout << endl;
     AVLBinaryTree::order(tree.root(), 0);
     return 0;
 }
