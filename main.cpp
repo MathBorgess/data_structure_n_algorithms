@@ -6,7 +6,6 @@ struct Node
 {
     int data;
     int height;
-    Node *antecessor;
     Node *rightChild;
     Node *leftChild;
 };
@@ -214,7 +213,7 @@ public:
 
     static Node *newNode(int data)
     {
-        return new Node{data, 0, nullptr, nullptr, nullptr};
+        return new Node{data, 0, nullptr, nullptr};
     }
 
     static Node *minValueNode(Node *node)
