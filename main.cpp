@@ -27,9 +27,36 @@ public:
         root_ = insert(root_, node);
     }
 
-    static Node *remove(Node *node)
+    Node *find(int data)
     {
-        if (node->height == 0)
+        Node *auxNode = root_;
+        while (auxNode != nullptr && auxNode->data != data)
+        {
+            if (data < auxNode->data)
+            {
+                auxNode = auxNode->leftChild;
+            }
+            else
+            {
+                auxNode = auxNode->rightChild;
+            }
+        }
+        return auxNode;
+    }
+
+    void remove(int data)
+    {
+        Node *node = find(data);
+        if (node != nullptr)
+        {
+            delNode(node);
+        }
+    }
+
+    static void *delNode(Node *node)
+    {
+        Node *auxNode;
+        if (node->height <= 1)
         {
             if (node->antecessor->leftChild == node)
             {
@@ -39,25 +66,38 @@ public:
             {
                 node->antecessor->rightChild = nullptr;
             }
+            AVLBinaryTree::order(node->antecessor, -1);
+            node->antecessor->height = max(height(node->antecessor->leftChild), height(node->antecessor->rightChild)) + 1;
+            int balance = getBalance(node->antecessor);
+            int childBalance;
+            if (balance > 1)
+            {
+                childBalance = getBalance(node->antecessor->leftChild);
+                if (childBalance < -1)
+                {
+                    node->antecessor->leftChild = leftRotate(node->antecessor->leftChild);
+                }
+                node->antecessor = rightRotate(node->antecessor);
+            }
+            else if (balance < -1)
+            {
+                childBalance = getBalance(node->antecessor->rightChild);
+                if (childBalance > 1)
+                {
+                    node->antecessor->rightChild = rightRotate(node->antecessor->rightChild);
+                }
+                node->antecessor = leftRotate(node->antecessor);
+            }
             delete node;
         }
         else
         {
-            Node *auxNode = sucessor(node);
-            swap(node, auxNode);
-            // I have to garantee the balance of the tree
-            remove(node);
+            auxNode = sucessor(node);
+            int auxData = node->data;
+            node->data = auxNode->data;
+            auxNode->data = auxData;
+            delNode(auxNode);
         }
-    }
-
-    static Node *swap(Node *node1, Node *node2)
-    {
-        Node *auxNode = new Node{node1->data, node1->height, node1->antecessor, node1->rightChild, node1->leftChild};
-        node1->data = node2->data;
-        node1->height = node2->height;
-        node2->data = auxNode->data;
-        node2->height = auxNode->height;
-        delete auxNode;
     }
 
     static int height(Node *node)
@@ -89,42 +129,36 @@ public:
         if (node->data < tree->data)
         {
             tree->leftChild = insert(tree->leftChild, node);
+            tree->leftChild->antecessor = tree;
         }
         else if (node->data > tree->data)
         {
             tree->rightChild = insert(tree->rightChild, node);
+            tree->rightChild->antecessor = tree;
         }
         else
             return tree;
-
         tree->height = 1 + max(height(tree->leftChild), height(tree->rightChild));
 
         int balance = getBalance(tree);
 
         if (balance > 1)
         {
-            if (node->data < tree->leftChild->data)
-            {
-                tree = rightRotate(tree);
-            }
-            else
+            if (node->data >= tree->leftChild->data)
             {
                 tree->leftChild = leftRotate(tree->leftChild);
-                tree = rightRotate(tree);
             }
+            tree = rightRotate(tree);
         }
         else if (balance < -1)
         {
-            if (node->data > tree->rightChild->data)
-            {
-                tree = leftRotate(tree);
-            }
-            else
+            if (node->data <= tree->rightChild->data)
             {
                 tree->rightChild = rightRotate(tree->rightChild);
-                tree = leftRotate(tree);
             }
+            tree = leftRotate(tree);
         }
+
         return tree;
     }
 
@@ -133,6 +167,8 @@ public:
         subtree->rightChild->antecessor = subtree->antecessor;
         subtree->antecessor = subtree->rightChild;
         subtree->rightChild = subtree->rightChild->leftChild;
+        if (subtree->antecessor->leftChild)
+            subtree->antecessor->leftChild->antecessor = subtree;
         subtree->antecessor->leftChild = subtree;
         subtree = subtree->antecessor;
         subtree->height = max(height(subtree->leftChild), height(subtree->rightChild)) + 1;
@@ -145,6 +181,8 @@ public:
         subtree->leftChild->antecessor = subtree->antecessor;
         subtree->antecessor = subtree->leftChild;
         subtree->leftChild = subtree->leftChild->rightChild;
+        if (subtree->antecessor->rightChild)
+            subtree->antecessor->rightChild->antecessor = subtree;
         subtree->antecessor->rightChild = subtree;
         subtree = subtree->antecessor;
         subtree->height = max(height(subtree->leftChild), height(subtree->rightChild)) + 1;
@@ -159,7 +197,7 @@ public:
     }
 
     // critical == 1 -> max node, critical == -1 -> min
-    static Node *critialNode(Node *subtree, int critial)
+    static Node *critialNode(Node *subtree, int critical)
     {
         if (subtree == nullptr)
         {
@@ -167,7 +205,7 @@ public:
         }
         else
         {
-            if (critial == 1)
+            if (critical == 1)
             {
                 if (subtree->rightChild == nullptr)
                 {
@@ -175,7 +213,7 @@ public:
                 }
                 else
                 {
-                    return critialNode(subtree->rightChild, critial);
+                    return critialNode(subtree->rightChild, critical);
                 }
             }
             else if (critical == -1)
@@ -186,7 +224,7 @@ public:
                 }
                 else
                 {
-                    return critialNode(subtree->leftChild, critial);
+                    return critialNode(subtree->leftChild, critical);
                 }
             }
         }
@@ -196,7 +234,7 @@ public:
     {
         if (subtree->rightChild != nullptr)
         {
-            return subtree->rightChild
+            return subtree->rightChild;
         }
         else
         {
@@ -231,7 +269,7 @@ public:
         {
             auxNode = subtree;
             Node *auxNode2 = subtree->antecessor;
-            if (auxNode != nullptr && auxNode2 nullptr && auxNode != auxNode2->rightChild)
+            if (auxNode != nullptr && auxNode2 != nullptr && auxNode != auxNode2->rightChild)
             {
                 auxNode = auxNode2;
                 auxNode2 = auxNode2->antecessor;
@@ -240,28 +278,30 @@ public:
         }
     }
 
-    // order == -1 -> preorder, order == 0 -> inorder, order == 1 -> postorder
-    static void order(Node *root, int order)
+    // value == -1 -> preorder, value == 0 -> inorder, value == 1 -> postorder
+    static void order(Node *root, int value)
     {
         if (root != nullptr)
         {
-            if (order == -1)
+            switch (value)
             {
+            case -1:
                 cout << root->data << endl;
-                order(root->leftChild, order);
-                order(root->rightChild, order);
-            }
-            else if (order == 0)
-            {
-                order(root->leftChild, order);
+                order(root->leftChild, value);
+                order(root->rightChild, value);
+                break;
+
+            case 0:
+                order(root->leftChild, value);
                 cout << root->data << endl;
-                order(root->rightChild, order);
-            }
-            else if (order == 1)
-            {
-                order(root->leftChild, order);
-                order(root->rightChild, order);
+                order(root->rightChild, value);
+                break;
+
+            case 1:
+                order(root->leftChild, value);
+                order(root->rightChild, value);
                 cout << root->data << endl;
+                break;
             }
         }
     }
@@ -276,6 +316,7 @@ int main()
     tree.add(4);
     tree.add(5);
     tree.add(6);
-    AVLBinaryTree::order(tree.root(), -1);
+    tree.remove(1);
+    AVLBinaryTree::order(tree.root(), 0);
     return 0;
 }
