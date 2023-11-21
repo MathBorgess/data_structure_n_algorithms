@@ -1,7 +1,46 @@
 #include <iostream>
-#include <chrono>
 
 using namespace std;
+
+struct ListNode
+{
+    int data;
+    ListNode *next;
+    ListNode *prev;
+};
+
+class LinkedList
+{
+private:
+    ListNode sentinel = {0, &sentinel, &sentinel};
+
+public:
+    void push(ListNode *node)
+    {
+        node->next = &sentinel;
+        node->prev = sentinel.prev;
+        sentinel.prev->next = node;
+        sentinel.prev = node;
+    }
+
+    void search()
+    {
+        ListNode *node = sentinel.next;
+        cout << "[";
+        if (node != nullptr && node != &sentinel)
+        {
+            cout << node->data;
+            node = node->next;
+        }
+
+        while (node != nullptr && node != &sentinel)
+        {
+            cout << "," << node->data;
+            node = node->next;
+        }
+        cout << "]" << endl;
+    }
+};
 
 struct Node
 {
@@ -32,9 +71,13 @@ public:
     Node *find(int data)
     {
         Node *auxNode = root_;
-        while (auxNode != nullptr && auxNode->data != data)
+        while (auxNode != nullptr)
         {
-            if (data < auxNode->data)
+            if (auxNode->data == data)
+            {
+                return auxNode;
+            }
+            else if (data < auxNode->data)
             {
                 auxNode = auxNode->leftChild;
             }
@@ -43,7 +86,7 @@ public:
                 auxNode = auxNode->rightChild;
             }
         }
-        return auxNode;
+        return nullptr;
     }
 
     int findLevel(int data)
@@ -76,30 +119,16 @@ public:
         if (node != nullptr)
         {
             root_ = delNode(root_, node);
-            return root_
+            return node;
         }
         return nullptr;
     }
 
-    void clear()
-    {
-        clear_(root_);
-        root_ = nullptr;
-    }
-
     void order(int value)
     {
-        order(root_, value);
-    }
-
-    static void clear_(Node *subtree)
-    {
-        if (subtree != nullptr)
-        {
-            clear_(subtree->leftChild);
-            clear_(subtree->rightChild);
-            delete subtree;
-        }
+        LinkedList *list = new LinkedList();
+        order(root_, value, list);
+        list->search();
     }
 
     static Node *delNode(Node *tree, Node *node)
@@ -294,28 +323,28 @@ public:
         return current;
     }
 
-    static void order(Node *root, int value)
+    static void order(Node *root, int value, LinkedList *result)
     {
         if (root != nullptr)
         {
             switch (value)
             {
             case -1:
-                cout << root->data << endl;
-                order(root->leftChild, value);
-                order(root->rightChild, value);
+                result->push(new ListNode{root->data, nullptr, nullptr});
+                order(root->leftChild, value, result);
+                order(root->rightChild, value, result);
                 break;
 
             case 0:
-                order(root->leftChild, value);
-                cout << root->data << endl;
-                order(root->rightChild, value);
+                order(root->leftChild, value, result);
+                result->push(new ListNode{root->data, nullptr, nullptr});
+                order(root->rightChild, value, result);
                 break;
 
             case 1:
-                order(root->leftChild, value);
-                order(root->rightChild, value);
-                cout << root->data << endl;
+                order(root->leftChild, value, result);
+                order(root->rightChild, value, result);
+                result->push(new ListNode{root->data, nullptr, nullptr});
                 break;
             }
         }
@@ -324,45 +353,58 @@ public:
 
 int main()
 {
-    AVLBinaryTree *tree = new AVLBinaryTree(1);
-    tree->add(2);
-    cout << tree->find(3)->data << endl;
-    tree->add(3);
-    tree->add(4);
-    tree->add(5);
-    tree->add(6);
-    tree->add(7);
-    tree->add(8);
-    tree->add(9);
-
-    tree->remove(3);
-    // stressTest
-    tree->clear();
-    delete tree;
-
-    auto start_time = chrono::high_resolution_clock::now();
-
-    tree = new AVLBinaryTree(1);
-    for (int i = 0; i < 10000000; i++)
+    string command;
+    int value;
+    Node *node;
+    AVLBinaryTree *tree = new AVLBinaryTree();
+    while (command != "FIM")
     {
-        tree->add(i);
-    }
+        cin >> command;
+        if (command == "ADICIONA")
+        {
+            cin >> value;
+            tree->add(value);
+        }
+        else if (command == "REMOVE")
+        {
+            cin >> value;
+            node = tree->remove(value);
 
-    auto end_time = chrono::high_resolution_clock::now();
+            if (node == nullptr)
+            {
+                cout << "Valor " << value << " inexistente" << endl;
+            }
+        }
+        else if (command == "NIVEL")
+        {
+            cin >> value;
+            int nodeLevel = tree->findLevel(value);
+            if (nodeLevel != -1)
+            {
+                cout << "Nivel de " << value << ": " << nodeLevel << endl;
+            }
+            else
+            {
+                cout << "Valor " << value << " inexistente" << endl;
+            }
+        }
+        else if (command == "PRINT")
+        {
+            cin >> command;
 
-    auto duration_ms = chrono::duration_cast<chrono::milliseconds>(end_time - start_time).count();
-    cout << "Execution time: " << duration_ms << " milliseconds" << endl;
-
-    start_time = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 10000000; i++)
-    {
-        tree->remove(i);
-    }
-
-    end_time = chrono::high_resolution_clock::now();
-
-    duration_ms = chrono::duration_cast<chrono::milliseconds>(end_time - start_time).count();
-    cout << "Execution time: " << duration_ms << " milliseconds" << endl;
-
+            if (command == "PREORDEM")
+            {
+                tree->order(-1);
+            }
+            else if (command == "EMORDEM")
+            {
+                tree->order(0);
+            }
+            else if (command == "POSORDEM")
+            {
+                tree->order(1);
+            };
+        }
+    };
     return 0;
 }
