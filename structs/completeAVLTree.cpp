@@ -18,6 +18,7 @@ private:
     Node *root_;
 
 public:
+    AVLBinaryTree() : root_(nullptr) {}
     AVLBinaryTree(int data) : root_(newNode(data)) {}
 
     Node *root() const { return root_; }
@@ -45,13 +46,15 @@ public:
         return auxNode;
     }
 
-    void remove(int data)
+    Node *remove(int data)
     {
         Node *node = find(data);
         if (node != nullptr)
         {
             root_ = delNode(root_, node);
+            return root_
         }
+        return nullptr;
     }
 
     void clear()
@@ -299,42 +302,43 @@ int main()
 {
     AVLBinaryTree *tree = new AVLBinaryTree(1);
     tree->add(2);
-    tree->add(3);
-    tree->add(4);
-    tree->add(5);
-    tree->add(6);
-    tree->add(7);
-    tree->add(8);
-    tree->add(9);
+    cout << tree->find(3)->data << endl;
+    // tree->add(3);
+    // tree->add(4);
+    // tree->add(5);
+    // tree->add(6);
+    // tree->add(7);
+    // tree->add(8);
+    // tree->add(9);
 
-    tree->remove(3);
-    // stressTest
-    tree->clear();
-    delete tree;
+    // tree->remove(3);
+    // // stressTest
+    // tree->clear();
+    // delete tree;
 
-    auto start_time = chrono::high_resolution_clock::now();
+    // auto start_time = chrono::high_resolution_clock::now();
 
-    tree = new AVLBinaryTree(1);
-    for (int i = 0; i < 10000000; i++)
-    {
-        tree->add(i);
-    }
+    // tree = new AVLBinaryTree(1);
+    // for (int i = 0; i < 10000000; i++)
+    // {
+    //     tree->add(i);
+    // }
 
-    auto end_time = chrono::high_resolution_clock::now();
+    // auto end_time = chrono::high_resolution_clock::now();
 
-    auto duration_ms = chrono::duration_cast<chrono::milliseconds>(end_time - start_time).count();
-    cout << "Execution time: " << duration_ms << " milliseconds" << endl;
+    // auto duration_ms = chrono::duration_cast<chrono::milliseconds>(end_time - start_time).count();
+    // cout << "Execution time: " << duration_ms << " milliseconds" << endl;
 
-    start_time = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 10000000; i++)
-    {
-        tree->remove(i);
-    }
+    // start_time = chrono::high_resolution_clock::now();
+    // for (int i = 0; i < 10000000; i++)
+    // {
+    //     tree->remove(i);
+    // }
 
-    end_time = chrono::high_resolution_clock::now();
+    // end_time = chrono::high_resolution_clock::now();
 
-    duration_ms = chrono::duration_cast<chrono::milliseconds>(end_time - start_time).count();
-    cout << "Execution time: " << duration_ms << " milliseconds" << endl;
+    // duration_ms = chrono::duration_cast<chrono::milliseconds>(end_time - start_time).count();
+    // cout << "Execution time: " << duration_ms << " milliseconds" << endl;
 
     return 0;
 }
