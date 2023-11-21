@@ -85,6 +85,33 @@ public:
         return auxNode;
     }
 
+    int *findLevel(int data)
+    {
+        Node *auxNode = root_;
+        int count = 0;
+        while (auxNode != nullptr && auxNode->data != data)
+        {
+            if (data < auxNode->data)
+            {
+                count++;
+                auxNode = auxNode->leftChild;
+            }
+            else
+            {
+                count++;
+                auxNode = auxNode->rightChild;
+            }
+        }
+        if (auxNode != nullptr)
+        {
+            return count;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
     Node *remove(int data)
     {
         Node *node = find(data);
@@ -101,15 +128,6 @@ public:
         LinkedList *list = new LinkedList();
         order(root_, value, list);
         list->search();
-    }
-
-    int nodeLevel(int data)
-    {
-        Node *node = find(data);
-        if (node != nullptr)
-        {
-            return nodeLevel(node);
-        }
     }
 
     static Node *delNode(Node *tree, Node *node)
@@ -330,16 +348,6 @@ public:
             }
         }
     }
-
-    static int nodeLevel(Node *tree, int count = 0)
-    {
-        if (tree->parent != nullptr)
-        {
-            count++;
-            count = nodeLevel(tree->parent, count);
-        }
-        return count;
-    }
 };
 
 int main()
@@ -369,7 +377,7 @@ int main()
         else if (command == "NIVEL")
         {
             cin >> value;
-            int nodeLevel = tree->nodeLevel(value);
+            int nodeLevel = tree->findLevel(value);
             if (nodeLevel != -1)
             {
                 cout << "Nivel de " << value << ": " << nodeLevel << endl;

@@ -296,6 +296,16 @@ public:
             }
         }
     }
+
+    static int nodeLevel(Node *tree, int count = 0)
+    {
+        if (tree->parent != nullptr)
+        {
+            count++;
+            count = nodeLevel(tree->parent, count);
+        }
+        return count;
+    }
 };
 
 int main()
