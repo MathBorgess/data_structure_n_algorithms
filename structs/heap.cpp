@@ -21,11 +21,14 @@ public:
         heap_ = new T[maxSize];
     }
 
-    Heap(int maxSize_, T *itemArray) : maxSize(maxSize_)
+    Heap(int maxSize_, T *itemArray, int minOrMax = 1) : maxSize(maxSize_)
     {
         heap_ = itemArray;
         size_ = maxSize;
-        buildMaxHeap();
+        if (minOrMax > 0)
+            buildMaxHeap();
+        else
+            buildMinHeap();
     }
 
     int parent(int index)
@@ -55,6 +58,28 @@ public:
         }
     }
 
+    void minHeapify(int index = 0)
+    {
+        int leftChild = 2 * index;
+        int rightChild = 2 * index + 1;
+        int smallest = index;
+        if (leftChild < size_ && heap_[leftChild]->key < heap_[index]->key)
+        {
+            smallest = leftChild;
+        }
+        if (rightChild < size_ && heap_[rightChild]->key < heap_[smallest]->key)
+        {
+            smallest = rightChild;
+        }
+        if (smallest != index)
+        {
+            T temp = heap_[index];
+            heap_[index] = heap_[smallest];
+            heap_[smallest] = temp;
+            minHeapify(smallest);
+        }
+    }
+
     void buildMaxHeap()
     {
         int middle = parent(maxSize - 1);
@@ -64,7 +89,16 @@ public:
         }
     }
 
-    void heapSort()
+    void buildMinHeap()
+    {
+        int middle = parent(maxSize - 1);
+        for (int i = middle; i >= 0; i--)
+        {
+            minHeapify(i);
+        }
+    }
+
+    void ascHeapSort()
     {
         int tempSize = size_;
         buildMaxHeap();
@@ -79,12 +113,27 @@ public:
         size_ = tempSize;
     }
 
-    void insert(T item)
+    void descHeapSort()
+    {
+        int tempSize = size_;
+        buildMinHeap();
+        for (int i = size_; i > 1; i--)
+        {
+            T temp = heap_[0];
+            heap_[0] = heap_[i];
+            heap_[i] = temp;
+            size_--;
+            minHeapify();
+        }
+        size_ = tempSize;
+    }
+
+    void insert(T item, int minOrMax = 1)
     {
         size_++;
         heap_[size_] = item;
         int index = size_;
-        while (index > 0 && heap_[parent(index)]->key < heap_[index]->key)
+        while (index > 0 && minOrMax > 0 ? heap_[parent(index)]->key < heap_[index]->key : heap_[parent(index)]->key > heap_[index]->key)
         {
             T temp = heap_[index];
             heap_[index] = heap_[parent(index)];
@@ -93,13 +142,13 @@ public:
         }
     }
 
-    void remove(int index)
+    void remove(int index, int minOrMax = 1)
     {
         T temp = heap_[index];
         heap_[index] = heap_[size_];
         heap_[size_] = temp;
         size_--;
-        maxHeapify(index);
+        minOrMax > 0 ? maxHeapify(index) : minHeapify(index);
     }
     int size() const { return size_ + 1; }
 
@@ -112,12 +161,17 @@ int main()
     heap2.insert(new Node{1});
     heap2.insert(new Node{8});
     heap2.insert(new Node{5});
+    heap2.insert(new Node{9});
+    heap2.insert(new Node{0});
+    heap2.insert(new Node{12});
+    heap2.insert(new Node{13});
+    // why that is inserting even when the vector is full?
     for (int i = 0; i < heap2.size(); i++)
     {
         cout << heap2.heap()[i]->key << endl;
     }
     cout << endl;
-    heap2.heapSort();
+    heap2.descHeapSort();
     for (int i = 0; i < heap2.size(); i++)
     {
         cout << heap2.heap()[i]->key << endl;

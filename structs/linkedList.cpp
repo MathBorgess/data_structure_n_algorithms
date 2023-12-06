@@ -1,30 +1,82 @@
 #include <iostream>
 
+template <typename T>
 struct Node
 {
-    int data;
+    T data;
     Node *next;
     Node *prev;
 };
 
+template <typename T>
 class LinkedList
 {
 private:
-    Node sentinel = {0, &sentinel, &sentinel};
+    Node<T> sentinel = {T(), &sentinel, &sentinel};
     int size_ = 0;
 
 public:
-    void enqueue(Node *node)
+    Node<T> *makeNode(T item)
     {
+        return new Node<T>{item, nullptr, nullptr};
+    }
+
+    void enqueue(T item)
+    {
+        Node<T> *node = makeNode(item);
         node->prev = &sentinel;
         node->next = sentinel.next;
         sentinel.next->prev = node;
         sentinel.next = node;
-        size++;
+        size_++;
     }
 
-    void push(Node *node)
+    T remove(T item)
     {
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel && node->data.key != item.key)
+        {
+            node = node->next;
+        }
+        if (node == nullptr || node == &sentinel)
+        {
+            return T();
+        }
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+        size_--;
+        return node->data;
+    }
+
+    T search(int key)
+    {
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel && node->data.key != key)
+        {
+            node = node->next;
+        }
+        if (node == nullptr || node == &sentinel)
+        {
+            return T();
+        }
+        return node->data;
+    }
+
+    T *list()
+    {
+        T *list = new T[size_];
+        Node<T> *node = sentinel.next;
+        for (int i = 0; i < size_; i++)
+        {
+            list[i] = node->data;
+            node = node->next;
+        }
+        return list;
+    }
+
+    void push(T item)
+    {
+        Node<T> *node = makeNode(item);
         node->next = &sentinel;
         node->prev = sentinel.prev;
         sentinel.prev->next = node;
@@ -32,54 +84,31 @@ public:
         size++;
     }
 
-    Node *remove()
+    T pop()
     {
         size--;
         sentinel.prev->prev->next = &sentinel;
-        Node *item = sentinel.prev;
+        Node<T> *item = sentinel.prev;
         sentinel.prev = sentinel.prev->prev;
-        return item;
+        return item->data;
     }
 
-    void search()
+    T remove(T item)
     {
-        Node *node = sentinel.next;
-        while (node != nullptr && node != &sentinel)
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel && node->data != item)
         {
-            std::cout << node->data << " ";
             node = node->next;
         }
-        std::cout << std::endl;
+        if (node == nullptr || node == &sentinel)
+        {
+            return nullptr;
+        }
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+        size--;
+        return node->data;
     }
 
-    int size() const { return size_; }
+    int size() const { return size_ + 1; }
 };
-
-int main()
-{
-    LinkedList list;
-
-    // Creating nodes
-    Node node1 = {1, nullptr, nullptr};
-    Node node2 = {2, nullptr, nullptr};
-    Node node3 = {3, nullptr, nullptr};
-    Node node4 = {4, nullptr, nullptr};
-    Node node5 = {5, nullptr, nullptr};
-
-    // Enqueuing nodes into the linked list
-    list.enqueue(&node1);
-    list.enqueue(&node2);
-    list.enqueue(&node3);
-    list.push(&node4);
-    list.push(&node5);
-
-    // Printing the linked list
-    std::cout << "Linked List: ";
-    list.search();
-    list.remove();
-    list.search();
-    list.remove();
-    list.search();
-
-    return 0;
-}
