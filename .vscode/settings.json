@@ -47,6 +47,8 @@
     "vector": "cpp",
     "algorithm": "cpp",
     "optional": "cpp",
-    "xlocmon": "cpp"
+    "xlocmon": "cpp",
+    "format": "cpp",
+    "forward_list": "cpp"
   }
 }
