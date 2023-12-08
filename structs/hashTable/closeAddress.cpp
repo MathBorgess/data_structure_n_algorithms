@@ -19,7 +19,7 @@ template <typename T>
 class LinkedList
 {
 private:
-    Node<T> sentinel = {T(), &sentinel, &sentinel};
+    Node<T> sentinel = {nullptr, &sentinel, &sentinel};
     int size_ = 0;
 
 public:
@@ -41,7 +41,7 @@ public:
     T remove(T item)
     {
         Node<T> *node = sentinel.next;
-        while (node != nullptr && node != &sentinel && node->data.key != item.key)
+        while (node != nullptr && node != &sentinel && node->data->key != item->key)
         {
             node = node->next;
         }
@@ -115,7 +115,7 @@ public:
             size_ = 0;
             rehash();
         }
-        int index = hash(item.key);
+        int index = hash(item->key);
         if (hashTable_[index].size() == 0)
         {
             hashTable_[index] = LinkedList<T>();
@@ -173,27 +173,25 @@ int updateMaxSize(int maxSize)
 
 int main()
 {
-    OpenedHashTable<Item> *hashTable = new OpenedHashTable<Item>(2, 0.5, &updateMaxSize);
-    hashTable->insert(Item{1});
-    hashTable->insert(Item{2});
-    hashTable->insert(Item{11});
-    hashTable->insert(Item{15});
-    hashTable->insert(Item{17});
-    hashTable->insert(Item{18});
-    hashTable->insert(Item{20});
+    OpenedHashTable<Item *> *hashTable = new OpenedHashTable<Item *>(2, 0.5, &updateMaxSize);
+    hashTable->insert(new Item{1});
+    hashTable->insert(new Item{2});
+    hashTable->insert(new Item{11});
+    hashTable->insert(new Item{15});
+    hashTable->insert(new Item{17});
+    hashTable->insert(new Item{18});
+    hashTable->insert(new Item{20});
     // what might I do with equal keys?
     for (int i = 0; i < hashTable->size(); i++)
     {
         if (hashTable->table()[i].size() > 0)
         {
-            Item *list = hashTable->table()[i].list();
+            Item **list = hashTable->table()[i].list();
             for (int j = 0; j < hashTable->table()[i].size(); j++)
             {
-                cout << list[j].key << endl;
+                cout << list[j]->key << endl;
             }
         }
-        else
-            cout << "empty" << endl;
     }
 
     return 0;
