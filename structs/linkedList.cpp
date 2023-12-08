@@ -57,7 +57,7 @@ public:
         }
         if (node == nullptr || node == &sentinel)
         {
-            return T();
+            return nullptr;
         }
         return node->data;
     }
@@ -81,15 +81,24 @@ public:
         node->prev = sentinel.prev;
         sentinel.prev->next = node;
         sentinel.prev = node;
-        size++;
+        size_++;
     }
 
     T pop()
     {
-        size--;
+        size_--;
         sentinel.prev->prev->next = &sentinel;
         Node<T> *item = sentinel.prev;
         sentinel.prev = sentinel.prev->prev;
+        return item->data;
+    }
+
+    T shift()
+    {
+        sentinel.next->next->prev = &sentinel;
+        Node<T> *item = sentinel.next;
+        sentinel.next = sentinel.next->next;
+        size_--;
         return item->data;
     }
 
@@ -106,9 +115,9 @@ public:
         }
         node->prev->next = node->next;
         node->next->prev = node->prev;
-        size--;
+        size_--;
         return node->data;
     }
 
-    int size() const { return size_ + 1; }
+    int size() const { return size_; }
 };

@@ -38,23 +38,6 @@ public:
         size_++;
     }
 
-    T remove(T item)
-    {
-        Node<T> *node = sentinel.next;
-        while (node != nullptr && node != &sentinel && node->data->key != item->key)
-        {
-            node = node->next;
-        }
-        if (node == nullptr || node == &sentinel)
-        {
-            return T();
-        }
-        node->prev->next = node->next;
-        node->next->prev = node->prev;
-        size_--;
-        return node->data;
-    }
-
     T search(int key)
     {
         Node<T> *node = sentinel.next;
@@ -64,9 +47,18 @@ public:
         }
         if (node == nullptr || node == &sentinel)
         {
-            return T();
+            return nullptr;
         }
         return node->data;
+    }
+
+    T shift()
+    {
+        size_--;
+        sentinel.next->next->prev = &sentinel;
+        Node<T> *item = sentinel.next;
+        sentinel.next = sentinel.next->next;
+        return item->data;
     }
 
     T *list()
@@ -92,9 +84,9 @@ private:
     int maxSize;
     float maxLoadFactor;
     LinkedList<T> *hashTable_;
-    int hash(int key, int steps = 0)
+    int hash(int key)
     {
-        return (key + steps) % maxSize;
+        return key % maxSize;
     }
     int (*updateMaxSize)(int);
 
@@ -116,10 +108,6 @@ public:
             rehash();
         }
         int index = hash(item->key);
-        if (hashTable_[index].size() == 0)
-        {
-            hashTable_[index] = LinkedList<T>();
-        }
         hashTable_[index].enqueue(item);
         size_++;
     }
@@ -136,7 +124,7 @@ public:
                 int oldTableSize = oldHashTable[i].size();
                 for (int j = 0; j < oldTableSize; j++)
                 {
-                    insert(oldHashTable[i].remove(oldHashTable[i].list()[j]), true);
+                    insert(oldHashTable[i].shift(), true);
                 }
             }
         }
