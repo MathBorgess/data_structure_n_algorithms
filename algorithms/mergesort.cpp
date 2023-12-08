@@ -7,35 +7,34 @@ template <typename T>
 class MergeSort
 {
 public:
-    static T *merge(T arr_1[], T arr_2[], int size1, int size2)
+    static void merge(T aux[], T arr_1[], T arr_2[], int size1, int size2)
     {
         int totalSize = size1 + size2;
-        T *arr = new T[totalSize]{};
         int i = 0, j = 0, k = 0;
         while (i < size1 && j < size2)
         {
             if (arr_1[i] < arr_2[j])
             {
-                arr[k++] = arr_1[i++];
+                aux[k++] = arr_1[i++];
             }
             else
             {
-                arr[k++] = arr_2[j++];
+                aux[k++] = arr_2[j++];
             }
         }
         while (i < size1)
         {
-            arr[k++] = arr_1[i++];
+            aux[k++] = arr_1[i++];
         }
         while (j < size2)
         {
-            arr[k++] = arr_2[j++];
+            aux[k++] = arr_2[j++];
         }
-        return arr;
     }
 
     static void mergeSort(T arr[], int size)
     {
+        T *aux = new T[size];
         for (int i = 1; i < size; i *= 2)
         {
             for (int j = 0; j < size; j += 2 * i)
@@ -51,14 +50,14 @@ public:
                 {
                     midIndex = size - 1;
                 }
-                T *mergedArr = merge(&arr[initIndex], &arr[midIndex + 1], midIndex - initIndex + 1, endIndex - midIndex);
+                merge(aux, &arr[initIndex], &arr[midIndex + 1], midIndex - initIndex + 1, endIndex - midIndex);
                 for (int k = initIndex; k <= endIndex; k++)
                 {
-                    arr[k] = mergedArr[k - initIndex];
+                    arr[k] = aux[k - initIndex];
                 }
-                delete[] mergedArr;
             }
         }
+        delete[] aux;
     }
 };
 
