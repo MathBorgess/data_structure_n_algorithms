@@ -14,18 +14,19 @@ private:
     int size_;
     int maxSize;
     T *heap_;
+    bool isMaxHeap;
 
 public:
-    Heap(int maxSize) : maxSize(maxSize), size_(-1)
+    Heap(int maxSize, bool isMaxHeap) : maxSize(maxSize), size_(-1), isMaxHeap(isMaxHeap)
     {
         heap_ = new T[maxSize];
     }
 
-    Heap(int maxSize_, T *itemArray, int minOrMax = 1) : maxSize(maxSize_)
+    Heap(int maxSize_, T *itemArray, bool isMaxHeap = true) : maxSize(maxSize_), isMaxHeap(isMaxHeap)
     {
         heap_ = itemArray;
         size_ = maxSize;
-        if (minOrMax > 0)
+        if (isMaxHeap)
             buildMaxHeap();
         else
             buildMinHeap();
@@ -133,7 +134,7 @@ public:
         size_++;
         heap_[size_] = item;
         int index = size_;
-        while (index > 0 && minOrMax > 0 ? heap_[parent(index)]->key < heap_[index]->key : heap_[parent(index)]->key > heap_[index]->key)
+        while (index > 0 && isMaxHeap ? heap_[parent(index)]->key < heap_[index]->key : heap_[parent(index)]->key > heap_[index]->key)
         {
             T temp = heap_[index];
             heap_[index] = heap_[parent(index)];
@@ -142,13 +143,13 @@ public:
         }
     }
 
-    void remove(int index, int minOrMax = 1)
+    void remove(int index)
     {
         T temp = heap_[index];
         heap_[index] = heap_[size_];
         heap_[size_] = temp;
         size_--;
-        minOrMax > 0 ? maxHeapify(index) : minHeapify(index);
+        isMaxHeap ? maxHeapify(index) : minHeapify(index);
     }
     int size() const { return size_ + 1; }
 
