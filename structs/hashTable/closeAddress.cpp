@@ -38,6 +38,23 @@ public:
         size_++;
     }
 
+    T remove(int key)
+    {
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel && node->data->key != key)
+        {
+            node = node->next;
+        }
+        if (node == nullptr || node == &sentinel)
+        {
+            return nullptr;
+        }
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+        size_--;
+        return node->data;
+    }
+
     T search(int key)
     {
         Node<T> *node = sentinel.next;
@@ -84,10 +101,7 @@ private:
     int maxSize;
     float maxLoadFactor;
     LinkedList<T> *hashTable_;
-    int hash(int key)
-    {
-        return key % maxSize;
-    }
+    int (*hash)(int, int);
     int (*updateMaxSize)(int);
 
 public:
@@ -95,7 +109,8 @@ public:
 
     LinkedList<T> *table() const { return hashTable_; }
 
-    OpenedHashTable(int maxSize, float maxLoadFactor, int (*updateMaxSize)(int)) : maxSize(maxSize), maxLoadFactor(maxLoadFactor), size_(0), updateMaxSize(updateMaxSize)
+    OpenedHashTable(int maxSize, float maxLoadFactor, int (*updateMaxSize)(int), int (*hash)(int, int))
+        : maxSize(maxSize), maxLoadFactor(maxLoadFactor), size_(0), updateMaxSize(updateMaxSize), hash(hash)
     {
         hashTable_ = new LinkedList<T>[maxSize] {};
     }
@@ -159,9 +174,14 @@ int updateMaxSize(int maxSize)
     return maxSize * 2;
 }
 
+int hash(int key, int maxSize)
+{
+    return key % maxSize;
+}
+
 int main()
 {
-    OpenedHashTable<Item *> *hashTable = new OpenedHashTable<Item *>(2, 0.5, &updateMaxSize);
+    OpenedHashTable<Item *> *hashTable = new OpenedHashTable<Item *>(2, 0.5, &updateMaxSize, &hash);
     hashTable->insert(new Item{1});
     hashTable->insert(new Item{2});
     hashTable->insert(new Item{11});
