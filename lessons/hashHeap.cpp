@@ -181,11 +181,11 @@ public:
         int leftChild = 2 * index;
         int rightChild = 2 * index + 1;
         int largest = index;
-        if (leftChild < size_ && heap_[leftChild]->key > heap_[index]->key)
+        if (leftChild < size_ && heap_[leftChild]->priority > heap_[index]->priority)
         {
             largest = leftChild;
         }
-        if (rightChild < size_ && heap_[rightChild]->key > heap_[largest]->key)
+        if (rightChild < size_ && heap_[rightChild]->priority > heap_[largest]->priority)
         {
             largest = rightChild;
         }
@@ -203,11 +203,11 @@ public:
         int leftChild = 2 * index;
         int rightChild = 2 * index + 1;
         int smallest = index;
-        if (leftChild < size_ && heap_[leftChild]->key < heap_[index]->key)
+        if (leftChild < size_ && heap_[leftChild]->priority < heap_[index]->priority)
         {
             smallest = leftChild;
         }
-        if (rightChild < size_ && heap_[rightChild]->key < heap_[smallest]->key)
+        if (rightChild < size_ && heap_[rightChild]->priority < heap_[smallest]->priority)
         {
             smallest = rightChild;
         }
@@ -404,6 +404,5 @@ int main()
             }
         }
     }
-
     return 0;
 }
