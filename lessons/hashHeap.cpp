@@ -48,7 +48,7 @@ public:
         {
             node = node->next;
         }
-        if (node == nullptr || node == &sentinel)
+        if (node == nullptr || node == &sentinel || node->data->key != key || node->data->inscriptionNumber != inscriptionNumber)
         {
             return nullptr;
         }
@@ -375,11 +375,19 @@ int main()
             }
             else
             {
-                Item *item2 = heap.updateCritial();
-                item2->row = item->row;
-                seatedHeap.remove(item->key, item->inscriptionNumber);
-                delete item;
-                seatedHeap.insert(item2);
+                if (heap.size() != 0)
+                {
+                    Item *item2 = heap.updateCritial();
+                    item2->row = item->row;
+                    seatedHeap.remove(item->key, item->inscriptionNumber);
+                    delete item;
+                    seatedHeap.insert(item2);
+                }
+                else
+                {
+                    seatedHeap.remove(item->key, item->inscriptionNumber);
+                    delete item;
+                }
                 cout << "Removido(a)" << endl;
             }
         }
