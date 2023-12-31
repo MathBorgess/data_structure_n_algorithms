@@ -386,6 +386,7 @@ int main()
                 else
                 {
                     seatedHeap.remove(item->key, item->inscriptionNumber);
+                    filledSeatsRows[item->row]--;
                     delete item;
                 }
                 cout << "Removido(a)" << endl;
