@@ -315,9 +315,12 @@ int main()
     string command, key;
     cin >> rows >> seats >> commands;
     Heap<Item *> heap(rows * seats, true);
-    Heap<Item *> seatedHeap(rows * seats, false);
+    Heap<Item *> **seatedHeaps = new Heap<Item *> *[rows];
+    for (int i = 0; i < rows; i++)
+    {
+        seatedHeaps[i] = new Heap<Item *>(seats, false);
+    }
     OpenedHashTable<Item *> hashTable(2 * rows * seats, 0.8, &updateMaxSize, &hashFuntion);
-    int *filledSeatsRows = new int[rows]{0};
 
     for (int i = 0; i < commands; i++)
     {
@@ -329,22 +332,40 @@ int main()
             Item *item = new Item{key, -1, priority, cadNumber};
             for (int j = 0; j < rows; j++)
             {
-                if (filledSeatsRows[j] < seats)
+                if (seatedHeaps[j]->size() < seats)
                 {
                     item->row = j;
-                    filledSeatsRows[j]++;
-                    seatedHeap.insert(item);
+                    seatedHeaps[j]->insert(item);
                     break;
                 }
             }
 
-            if (item->row == -1 && seatedHeap.size() > 0 && seatedHeap.critical()->priority < item->priority)
+            if (item->row == -1)
             {
-                Item *item2 = seatedHeap.updateCritial();
-                item->row = item2->row;
-                seatedHeap.insert(item);
-                item2->row = -1;
-                heap.insert(item2);
+                int lessPriorityRow = -1;
+                for (int j = 0; j < rows; j++)
+                {
+                    if (seatedHeaps[j]->size() == seats)
+                    {
+                        if (lessPriorityRow == -1)
+                        {
+                            lessPriorityRow = j;
+                        }
+                        else if (seatedHeaps[j]->critical()->priority < seatedHeaps[lessPriorityRow]->critical()->priority)
+                        {
+                            lessPriorityRow = j;
+                        }
+                    }
+                }
+
+                if (seatedHeaps[lessPriorityRow]->critical()->priority < item->priority)
+                {
+                    Item *item2 = seatedHeaps[lessPriorityRow]->updateCritial();
+                    item->row = item2->row;
+                    seatedHeaps[lessPriorityRow]->insert(item);
+                    item2->row = -1;
+                    heap.insert(item2);
+                }
             }
 
             if (item->row == -1)
@@ -379,14 +400,13 @@ int main()
                 {
                     Item *item2 = heap.updateCritial();
                     item2->row = item->row;
-                    seatedHeap.remove(item->key, item->inscriptionNumber);
+                    seatedHeaps[item2->row]->remove(item->key, item->inscriptionNumber);
                     delete item;
-                    seatedHeap.insert(item2);
+                    seatedHeaps[item2->row]->insert(item2);
                 }
                 else
                 {
-                    seatedHeap.remove(item->key, item->inscriptionNumber);
-                    filledSeatsRows[item->row]--;
+                    seatedHeaps[item->row]->remove(item->key, item->inscriptionNumber);
                     delete item;
                 }
                 cout << "Removido(a)" << endl;
