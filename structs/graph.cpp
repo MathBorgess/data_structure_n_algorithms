@@ -23,7 +23,6 @@ private:
 
     void fillAdjancets()
     {
-
         for (int i = 0; i < size_; i++)
         {
             adjacencyMatrix[i] = new T[size_];
@@ -96,13 +95,13 @@ public:
         return new Node<T>{key, item, nullptr, nullptr};
     }
 
-    T pop()
+    T shift()
     {
+        sentinel.next->next->prev = &sentinel;
+        Node<T> *item = sentinel.next;
+        sentinel.next = sentinel.next->next;
         size_--;
-        sentinel.prev->prev->next = &sentinel;
-        Node<T> *item = sentinel.prev;
-        sentinel.prev = sentinel.prev->prev;
-        return item->value;
+        return item->data;
     }
 
     T remove(int key)
@@ -298,7 +297,7 @@ public:
                 visited[i] = true;
                 while (queue->size() > 0)
                 {
-                    int vertex = queue->pop();
+                    int vertex = queue->shift();
                     T *adjacents = graph->getAdjacent(vertex);
                     for (int i = 0; i < graph->size(); i++)
                     {
@@ -324,7 +323,7 @@ int main()
     graph.addEdge(1, 3, 1);
     graph.addEdge(2, 4, 1);
     graph.addEdge(3, 4, 1);
-    int *antecessor = graph.barrowSearch();
+    int *antecessor = graph.deepSearch();
     for (int i = 0; i < 5; i++)
     {
         cout << antecessor[i] << endl;
