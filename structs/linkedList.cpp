@@ -12,10 +12,16 @@ template <typename T>
 class LinkedList
 {
 private:
-    Node<T> sentinel = {T(), &sentinel, &sentinel};
+    Node<T> sentinel = {T(), nullptr, nullptr};
     int size_ = 0;
 
 public:
+    LinkedList()
+    {
+        sentinel.next = &sentinel;
+        sentinel.prev = &sentinel;
+    }
+
     Node<T> *makeNode(T item)
     {
         return new Node<T>{item, nullptr, nullptr};
