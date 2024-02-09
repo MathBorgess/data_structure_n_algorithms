@@ -472,17 +472,11 @@ public:
         }
         heap->search(0)->value = 0;
         heap->minHeapify();
-        Node<T> **heapArr = heap->heap();
-        for (int i = 0; i < size; i++)
-        {
-            cout << heapArr[i]->key << " " << heapArr[i]->value << endl;
-        }
         while (heap->size() > 0)
         {
             Node<T> *node = heap->critical();
             visited[node->key] = true;
             T *adjacents = graph->getAdjacent(node->key);
-
             for (int j = 0; j < size; j++)
             {
                 if (adjacents[j])
@@ -521,15 +515,10 @@ public:
         Heap<heapNode *> *heap = new Heap<heapNode *>(pow(size, 2));
         do
         {
-            cout << "ver " << vertex << endl;
             visited[vertex] = true;
-            for (int i = 0; i < size; i++)
-            {
-                cout << visited[i] << " ";
-            }
             visitedCount++;
+            heapNode *node;
             T *adjacents = graph->getAdjacent(vertex);
-            int size = graph->size();
             for (int i = 0; i < size; i++)
             {
                 if (adjacents[i] && !visited[i])
@@ -537,16 +526,19 @@ public:
                     heap->insert(new heapNode{vertex, i, adjacents[i]});
                 }
             }
-            heapNode *node;
-            while (heap->size() > 0 && (!node || node->endVertex != vertex))
+            bool flag = true;
+            do
             {
-                heapNode *node = heap->critical();
+                flag = true;
+                node = heap->critical();
+                bool var = !visited[node->endVertex];
                 if (!visited[node->endVertex])
                 {
                     mst->addEdge(node->startVertex, node->endVertex, node->value);
                     vertex = node->endVertex;
+                    flag = false;
                 }
-            };
+            } while (heap->size() > 0 && flag);
         } while (visitedCount < size);
 
         return mst;
@@ -556,7 +548,7 @@ public:
 int main()
 {
     int size = 7;
-    Graph<int> graph(size, true, false);
+    Graph<int> graph(size, false, false);
     graph.addEdge(0, 1, 4);
     graph.addEdge(0, 2, 1);
     graph.addEdge(0, 6, 2);
@@ -568,14 +560,7 @@ int main()
     graph.addEdge(2, 4, 1);
     graph.addEdge(3, 4, 1);
     graph.addEdge(0, 5, 10);
-    graph.addEdge(5, 2, 1);
     IGraphStructure<int> *antecessor = graph.prim();
-    for (int i = 0; i < size; i++)
-    {
-        for (int j = 0; j < size; j++)
-            cout << antecessor->matrix()[i][j] << " ";
-        cout << endl;
-    }
 
     return 0;
 }

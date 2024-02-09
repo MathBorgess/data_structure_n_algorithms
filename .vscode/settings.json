@@ -10,6 +10,7 @@
     "unordered_map": "cpp",
     "vector": "cpp",
     "__node_handle": "cpp",
-    "ostream": "cpp"
+    "ostream": "cpp",
+    "__locale": "cpp"
   }
 }
