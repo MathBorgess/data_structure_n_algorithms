@@ -531,7 +531,6 @@ public:
             {
                 flag = true;
                 node = heap->critical();
-                bool var = !visited[node->endVertex];
                 if (!visited[node->endVertex])
                 {
                     mst->addEdge(node->startVertex, node->endVertex, node->value);
