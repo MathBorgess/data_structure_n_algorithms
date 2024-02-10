@@ -9,7 +9,7 @@
         "-fansi-escape-codes",
         "-g",
         "${file}",
-        "-std=c++11",
+        "-std=c++17",
         "-stdlib=libc++",
         "-o",
         "${fileDirname}/${fileBasenameNoExtension}"

@@ -11,6 +11,14 @@
     "vector": "cpp",
     "__node_handle": "cpp",
     "ostream": "cpp",
-    "__locale": "cpp"
+    "__locale": "cpp",
+    "algorithm": "cpp",
+    "__bit_reference": "cpp",
+    "__memory": "cpp",
+    "limits": "cpp",
+    "optional": "cpp",
+    "ratio": "cpp",
+    "system_error": "cpp",
+    "tuple": "cpp"
   }
 }

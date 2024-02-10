@@ -135,11 +135,11 @@ public:
         int leftChild = 2 * index;
         int rightChild = 2 * index + 1;
         int smallest = index;
-        if (leftChild < size_ && heap_[leftChild]->value < heap_[index]->value)
+        if (leftChild <= size_ && heap_[leftChild]->value < heap_[index]->value)
         {
             smallest = leftChild;
         }
-        if (rightChild < size_ && heap_[rightChild]->value < heap_[smallest]->value)
+        if (rightChild <= size_ && heap_[rightChild]->value < heap_[smallest]->value)
         {
             smallest = rightChild;
         }
@@ -422,7 +422,7 @@ public:
         return antecessor;
     }
 
-    int *barrowSearch()
+    int *barrowSearch(int init = 0)
     {
         int size = graph->size();
         bool *visited = new bool[size];
@@ -433,7 +433,8 @@ public:
             visited[i] = false;
             antecessor[i] = -1;
         }
-        for (int i = 0; i < size; i++)
+        int loopState = 0;
+        for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
         {
             if (!visited[i])
             {
@@ -458,31 +459,42 @@ public:
         return antecessor;
     }
 
-    int *dijkstra()
+    int *dijkstra(int init = 0)
     {
         int size = graph->size();
         int *antecessor = new int[size];
         bool *visited = new bool[size];
+        bool breaked = false;
         Heap<Node<T> *> *heap = new Heap<Node<T> *>(size);
-        for (int i = 0; i < size; i++)
+        int loopState = 0;
+        for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
         {
             antecessor[i] = -1;
             visited[i] = false;
             heap->insert(new Node<T>{i, INT_MAX, nullptr, nullptr});
         }
-        heap->search(0)->value = 0;
-        heap->minHeapify();
-        while (heap->size() > 0)
+        heap->search(init)->value = 0;
+        while (heap->size() > 0 && !breaked)
         {
             Node<T> *node = heap->critical();
+
             visited[node->key] = true;
-            T *adjacents = graph->getAdjacent(node->key);
-            for (int j = 0; j < size; j++)
+            if (node->value != INT_MAX)
             {
-                if (adjacents[j])
+
+                T *adjacents = graph->getAdjacent(node->key);
+                for (int j = 0; j < size; j++)
                 {
-                    relax(node->key, node->value, j, heap, antecessor);
+                    if (adjacents[j])
+                    {
+                        relax(node->key, node->value, j, heap, antecessor);
+                    }
                 }
+            }
+            else
+            {
+                antecessor[node->key] = -1;
+                breaked = true;
             }
         }
         return antecessor;
@@ -559,7 +571,13 @@ int main()
     graph.addEdge(2, 4, 1);
     graph.addEdge(3, 4, 1);
     graph.addEdge(0, 5, 10);
-    IGraphStructure<int> *antecessor = graph.prim();
+
+    int *antecessor = graph.barrowSearch(1);
+    cout << "Barrow Search: ";
+    for (int i = 0; i < size; i++)
+    {
+        cout << antecessor[i] << " ";
+    }
 
     return 0;
 }
