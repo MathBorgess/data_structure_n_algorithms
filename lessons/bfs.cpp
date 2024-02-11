@@ -36,13 +36,13 @@ public:
         return new Node<T>{key, item, nullptr, nullptr};
     }
 
-    T shift()
+    pair<T, int> shift()
     {
         sentinel.next->next->prev = &sentinel;
         Node<T> *item = sentinel.next;
         sentinel.next = sentinel.next->next;
         size_--;
-        return item->key;
+        return make_pair(item->key, item->value);
     }
 
     T remove(int key)
@@ -71,18 +71,32 @@ public:
         }
         if (node == nullptr || node == &sentinel)
         {
-            return NULL;
+            return 0;
         }
         return node->value;
     }
 
-    T *list()
+    void enqueueList(LinkedList<T> *list, bool *visited, T weight)
     {
-        T *list = new T[maxSize_ ? maxSize_ : size_]{0};
         Node<T> *node = sentinel.next;
         for (int i = 0; i < size_; i++)
         {
-            list[node->key] = node->value;
+            if (!visited[node->key])
+            {
+                list->push(node->key, weight);
+                visited[node->key] = true;
+            }
+            node = node->next;
+        }
+    }
+
+    int *list()
+    {
+        T *list = new T[size_ + 1]{-1};
+        Node<T> *node = sentinel.next;
+        for (int i = 0; i < size_; i++)
+        {
+            list[i] = node->key;
             node = node->next;
         }
         return list;
@@ -109,69 +123,73 @@ public:
     virtual void removeEdge(int from, int to) = 0;
     virtual T getEdge(int from, int to) = 0;
     virtual T *getAdjacent(int from) = 0;
+    virtual void enqueueAdjancents(int from, T weight, LinkedList<T> *queue, bool *visited) = 0;
     virtual int size() = 0;
     virtual T **matrix() = 0;
 };
 
 template <typename T>
-class GraphMatrix : public IGraphStructure<T>
+class GraphList : public IGraphStructure<T>
 {
 private:
     int size_;
     bool directional_;
-    T **adjacencyMatrix;
-
-    void fillAdjancets()
-    {
-        for (int i = 0; i < size_; i++)
-        {
-            adjacencyMatrix[i] = new T[size_];
-            for (int j = 0; j < size_; j++)
-            {
-                adjacencyMatrix[i][j] = T();
-            }
-        }
-    }
+    LinkedList<T> *adjacencyList;
 
 public:
-    GraphMatrix(int size, bool directional)
+    GraphList(int size, bool directional)
     {
         size_ = size;
         directional_ = directional;
-        adjacencyMatrix = new T *[size];
-        fillAdjancets();
+        adjacencyList = new LinkedList<T>[size];
     }
 
-    T **matrix() { return adjacencyMatrix; }
-
-    int size() { return size_; }
+    T **matrix()
+    {
+        T **matrix = new T *[size_];
+        for (int i = 0; i < size_; i++)
+        {
+            matrix[i] = adjacencyList[i].list();
+        }
+        return matrix;
+    }
 
     void addEdge(int from, int to, T weight)
     {
-        adjacencyMatrix[from][to] = weight;
+        adjacencyList[from].push(to, weight);
         if (!directional_)
         {
-            adjacencyMatrix[to][from] = weight;
+            adjacencyList[to].push(from, weight);
         }
     }
 
     void removeEdge(int from, int to)
     {
-        adjacencyMatrix[from][to] = T();
+        adjacencyList[from].remove(to);
         if (!directional_)
         {
-            adjacencyMatrix[to][from] = T();
+            adjacencyList[to].remove(from);
         }
     }
 
     T getEdge(int from, int to)
     {
-        return adjacencyMatrix[from][to];
+        return adjacencyList[from].search(to);
     }
 
     T *getAdjacent(int from)
     {
-        return adjacencyMatrix[from];
+        return adjacencyList[from].list();
+    }
+
+    void enqueueAdjancents(int from, T weight, LinkedList<T> *queue, bool *visited)
+    {
+        adjacencyList[from].enqueueList(queue, visited, weight);
+    }
+
+    int size()
+    {
+        return size_;
     }
 };
 
@@ -184,7 +202,7 @@ private:
 public:
     Graph(int size)
     {
-        graph = new GraphMatrix<T>(size, true);
+        graph = new GraphList<T>(size, true);
     }
 
     void addEdge(int from, int to, T weight)
@@ -207,41 +225,24 @@ public:
         return graph->getAdjacent(from);
     }
 
-    int *barrowSearch(int init = 0)
+    int barrowSearch(int init = 0, int end = -1)
     {
         int size = graph->size();
-        bool *visited = new bool[size];
-        int *antecessor = new int[size];
+        bool *visited = new bool[size]{false};
         LinkedList<int> *queue = new LinkedList<int>();
-        for (int i = 0; i < size; i++)
+        queue->push(init, 0);
+        visited[init] = true;
+        pair<int, int> node = make_pair(-2, -1);
+        while (queue->size() > 0 && node.first != end)
         {
-            visited[i] = false;
-            antecessor[i] = -1;
+            node = queue->shift();
+            graph->enqueueAdjancents(node.first, node.second + 1, queue, visited);
         }
-        int loopState = 0;
-        for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
+        if (node.first != end)
         {
-            if (!visited[i])
-            {
-                queue->push(i, i);
-                visited[i] = true;
-                while (queue->size() > 0)
-                {
-                    int vertex = queue->shift();
-                    T *adjacents = graph->getAdjacent(vertex);
-                    for (int i = 0; i < size; i++)
-                    {
-                        if (!visited[i] && adjacents[i])
-                        {
-                            visited[i] = true;
-                            antecessor[i] = vertex;
-                            queue->push(i, i);
-                        }
-                    }
-                }
-            }
+            return -1;
         }
-        return antecessor;
+        return node.second;
     }
 };
 
@@ -271,43 +272,26 @@ int main()
                     endVertex = flat(col, i, j);
                 }
 
-                int k = i;
-                int l = j - 1;
-                if (l >= 0)
+                int dx[] = {-1, 1, 0, 0};
+                int dy[] = {0, 0, 1, -1};
+                for (int k = 0; k < 4; k++)
                 {
-                    graph.addEdge(flat(col, k, l), flat(col, i, j), 1);
-                }
-                l = j + 1;
-                if (l < col)
-                {
-                    graph.addEdge(flat(col, k, l), flat(col, i, j), 1);
-                }
-                k = i - 1;
-                l = j;
-                if (k >= 0)
-                {
-                    graph.addEdge(flat(col, k, l), flat(col, i, j), 1);
-                }
-                k = i + 1;
-                if (k < row)
-                {
-                    graph.addEdge(flat(col, k, l), flat(col, i, j), 1);
+                    int X = j + dx[k];
+                    int Y = i + dy[k];
+
+                    if (X > -1 && X < col && Y > -1 && Y < row)
+                    {
+                        graph.addEdge(flat(col, Y, X), flat(col, i, j), 1);
+                    }
                 }
             }
         }
     }
 
-    int *antecessor = graph.barrowSearch(initVertex);
-    int pathSize = 0;
-    int vertex = endVertex;
-    while (vertex != -1 && vertex != initVertex)
+    int pathLen = graph.barrowSearch(initVertex, endVertex);
+    if (pathLen != -1)
     {
-        vertex = antecessor[vertex];
-        pathSize++;
-    }
-    if (vertex == initVertex)
-    {
-        cout << pathSize << endl;
+        cout << pathLen << endl;
     }
     else
     {
