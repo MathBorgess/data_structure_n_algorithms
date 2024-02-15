@@ -357,12 +357,12 @@ private:
         }
     }
 
-    void relax(int startVertex, T startVertexWeight, int endVertex, int *distance, int *antecessor)
+    void relax(int startVertex, int endVertex, T *distance, int *antecessor, Heap<Node<T> *> *heap)
     {
         T weight = graph->getEdge(startVertex, endVertex);
-        if (distance[endVertex] > startVertexWeight + weight)
+        if (distance[endVertex] > distance[startVertex] + weight)
         {
-            distance[endVertex] = startVertexWeight + weight;
+            distance[endVertex] = distance[startVertex] + weight;
             heap->insert(new Node<T>{endVertex, distance[endVertex], nullptr, nullptr});
             antecessor[endVertex] = startVertex;
         }
@@ -462,7 +462,7 @@ public:
     {
         int size = graph->size();
         int *antecessor = new int[size];
-        int *distance = new int[size];
+        T *distance = new T[size];
         bool *visited = new bool[size];
         bool breaked = false;
         Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
@@ -471,30 +471,22 @@ public:
         {
             antecessor[i] = -1;
             visited[i] = false;
-            distance[i] = i == init ? 0 : INT_MAX;
-            heap->insert(new Node<T>{i, i == 0 ? - : INT_MAX, nullptr, nullptr});
+            distance[i] = INT_MAX;
         }
+        distance[init] = 0;
+        heap->insert(new Node<T>{init, 0, nullptr, nullptr});
         while (heap->size() > 0 && !breaked)
         {
-            Node<T> *node = heap->critical();
+            int node = heap->critical()->key;
 
-            visited[node->key] = true;
-            if (node->value != INT_MAX)
+            visited[node] = true;
+            T *adjacents = graph->getAdjacent(node);
+            for (int j = 0; j < size; j++)
             {
-
-                T *adjacents = graph->getAdjacent(node->key);
-                for (int j = 0; j < size; j++)
+                if (adjacents[j])
                 {
-                    if (adjacents[j])
-                    {
-                        relax(node->key, node->value, j, distance, antecessor);
-                    }
+                    relax(node, j, distance, antecessor, heap);
                 }
-            }
-            else
-            {
-                antecessor[node->key] = -1;
-                breaked = true;
             }
         }
         return antecessor;
