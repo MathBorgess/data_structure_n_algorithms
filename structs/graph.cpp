@@ -357,15 +357,14 @@ private:
         }
     }
 
-    void relax(int startVertex, T startVertexWeight, int endVertex, Heap<Node<T> *> *weightHeap, int *antecessor)
+    void relax(int startVertex, T startVertexWeight, int endVertex, int *distance, int *antecessor)
     {
         T weight = graph->getEdge(startVertex, endVertex);
-        Node<T> *node = weightHeap->search(endVertex);
-        if (node->value > startVertexWeight + weight)
+        if (distance[endVertex] > startVertexWeight + weight)
         {
-            node->value = startVertexWeight + weight;
+            distance[endVertex] = startVertexWeight + weight;
+            heap->insert(new Node<T>{endVertex, distance[endVertex], nullptr, nullptr});
             antecessor[endVertex] = startVertex;
-            weightHeap->buildMinHeap();
         }
     }
 
@@ -463,17 +462,18 @@ public:
     {
         int size = graph->size();
         int *antecessor = new int[size];
+        int *distance = new int[size];
         bool *visited = new bool[size];
         bool breaked = false;
-        Heap<Node<T> *> *heap = new Heap<Node<T> *>(size);
+        Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
         int loopState = 0;
         for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
         {
             antecessor[i] = -1;
             visited[i] = false;
-            heap->insert(new Node<T>{i, INT_MAX, nullptr, nullptr});
+            distance[i] = i == init ? 0 : INT_MAX;
+            heap->insert(new Node<T>{i, i == 0 ? - : INT_MAX, nullptr, nullptr});
         }
-        heap->search(init)->value = 0;
         while (heap->size() > 0 && !breaked)
         {
             Node<T> *node = heap->critical();
@@ -487,7 +487,7 @@ public:
                 {
                     if (adjacents[j])
                     {
-                        relax(node->key, node->value, j, heap, antecessor);
+                        relax(node->key, node->value, j, distance, antecessor);
                     }
                 }
             }
