@@ -33,6 +33,12 @@ public:
         flag = new bool[maxSize]{0};
     }
 
+    ~ClosedHashTable()
+    {
+        delete[] hashTable_;
+        delete[] flag;
+    }
+
     void insert(T item, bool rehashing = false)
     {
         if (size_ >= maxSize * maxLoadFactor && !rehashing)

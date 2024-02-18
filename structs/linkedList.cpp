@@ -126,4 +126,16 @@ public:
     }
 
     int size() const { return size_; }
+
+    ~LinkedList()
+    {
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel)
+        {
+            Node<T> *temp = node;
+            node = node->next;
+            delete temp;
+        }
+        delete node;
+    }
 };

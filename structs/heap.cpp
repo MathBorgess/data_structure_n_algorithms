@@ -154,6 +154,11 @@ public:
     int size() const { return size_ + 1; }
 
     T *heap() const { return heap_; }
+
+    ~Heap()
+    {
+        delete[] heap_;
+    }
 };
 
 int main()
@@ -177,6 +182,7 @@ int main()
     {
         cout << heap2.heap()[i]->key << endl;
     }
+    delete heap2;
 
     return 0;
 }

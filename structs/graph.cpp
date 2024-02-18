@@ -99,6 +99,18 @@ public:
     }
 
     int size() const { return size_; }
+
+    ~LinkedList()
+    {
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel)
+        {
+            Node<T> *temp = node;
+            node = node->next;
+            delete temp;
+        }
+        delete node;
+    }
 };
 
 template <typename T>
@@ -199,6 +211,11 @@ public:
     int size() const { return size_ + 1; }
 
     T *heap() const { return heap_; }
+
+    ~Heap()
+    {
+        delete[] heap_;
+    }
 };
 
 template <typename T>
@@ -240,6 +257,15 @@ public:
         directional_ = directional;
         adjacencyMatrix = new T *[size];
         fillAdjancets();
+    }
+
+    ~GraphMatrix()
+    {
+        for (int i = 0; i < size_; i++)
+        {
+            delete[] adjacencyMatrix[i];
+        }
+        delete[] adjacencyMatrix;
     }
 
     T **matrix() { return adjacencyMatrix; }
@@ -293,6 +319,10 @@ public:
         {
             adjacencyList[i].updateMaxSize(size);
         }
+    }
+    ~GraphList()
+    {
+        delete[] adjacencyList;
     }
 
     T **matrix()
@@ -355,6 +385,7 @@ private:
                 dfs(i, visited, antecessor);
             }
         }
+        delete[] adjacents;
     }
 
     void relax(int startVertex, int endVertex, T *distance, int *antecessor, Heap<Node<T> *> *heap)
@@ -379,6 +410,10 @@ public:
         {
             graph = new GraphList<T>(size, isDirectional);
         }
+    }
+    ~Graph()
+    {
+        delete graph;
     }
 
     void addEdge(int from, int to, T weight)
@@ -418,6 +453,7 @@ public:
                 dfs(i, visited, antecessor);
             }
         }
+        delete[] visited;
         return antecessor;
     }
 
@@ -455,6 +491,8 @@ public:
                 }
             }
         }
+        delete queue;
+        delete[] visited;
         return antecessor;
     }
 
@@ -489,6 +527,10 @@ public:
                 }
             }
         }
+        delete heap;
+        delete[] visited;
+        delete[] distance;
+
         return antecessor;
     }
 
@@ -544,6 +586,9 @@ public:
             } while (heap->size() > 0 && flag);
         } while (visitedCount < size);
 
+        delete heap;
+        delete[] visited;
+
         return mst;
     }
 };
@@ -570,6 +615,7 @@ int main()
     {
         cout << antecessor[i] << " ";
     }
-
+    delete[] antecessor;
+    delete graph;
     return 0;
 }

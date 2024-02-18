@@ -28,6 +28,18 @@ public:
         return new Node<T>{item, nullptr, nullptr};
     }
 
+    ~LinkedList()
+    {
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel)
+        {
+            Node<T> *temp = node;
+            node = node->next;
+            delete temp;
+        }
+        delete node;
+    }
+
     void enqueue(T item)
     {
         Node<T> *node = makeNode(item);
@@ -113,6 +125,10 @@ public:
         : maxSize(maxSize), maxLoadFactor(maxLoadFactor), size_(0), updateMaxSize(updateMaxSize), hash(hash)
     {
         hashTable_ = new LinkedList<T>[maxSize] {};
+    }
+    ~OpenedHashTable()
+    {
+        delete[] hashTable_;
     }
 
     void insert(T item, bool rehashing = false)

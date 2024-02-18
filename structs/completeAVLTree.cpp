@@ -17,6 +17,16 @@ class AVLBinaryTree
 private:
     Node *root_;
 
+    void erase(Node *root)
+    {
+        if (root != nullptr)
+        {
+            erase(root->leftChild);
+            erase(root->rightChild);
+            delete root;
+        }
+    }
+
 public:
     AVLBinaryTree() : root_(nullptr) {}
     AVLBinaryTree(int data) : root_(newNode(data)) {}
@@ -79,12 +89,6 @@ public:
             return root_
         }
         return nullptr;
-    }
-
-    void clear()
-    {
-        clear_(root_);
-        root_ = nullptr;
     }
 
     void order(int value)
@@ -320,6 +324,11 @@ public:
             }
         }
     }
+
+    ~AVLBinaryTree()
+    {
+        erase(root_);
+    }
 };
 
 int main()
@@ -335,9 +344,8 @@ int main()
     tree->add(8);
     tree->add(9);
 
-    tree->remove(3);
+    delete tree->remove(3);
     // stressTest
-    tree->clear();
     delete tree;
 
     auto start_time = chrono::high_resolution_clock::now();
