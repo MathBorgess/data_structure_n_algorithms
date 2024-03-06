@@ -76,6 +76,20 @@ public:
         return node->value;
     }
 
+    void update(int key, T value)
+    {
+        Node<T> *node = sentinel.next;
+        while (node != nullptr && node != &sentinel && node->key != key)
+        {
+            node = node->next;
+        }
+        if (node == nullptr || node == &sentinel)
+        {
+            return;
+        }
+        node->value = value;
+    }
+
     T *list()
     {
         T *list = new T[maxSize_ ? maxSize_ : size_]{0};
@@ -224,81 +238,11 @@ public:
     virtual void addEdge(int from, int to, T weight) = 0;
     virtual void removeEdge(int from, int to) = 0;
     virtual T getEdge(int from, int to) = 0;
+    virtual void updateEdge(int from, int to, T weight) = 0;
     virtual T *getAdjacent(int from) = 0;
     virtual int size() = 0;
     virtual T **matrix() = 0;
     virtual ~IGraphStructure() {}
-};
-
-template <typename T>
-class GraphMatrix : public IGraphStructure<T>
-{
-private:
-    int size_;
-    bool directional_;
-    T **adjacencyMatrix;
-
-    void fillAdjancets()
-    {
-        for (int i = 0; i < size_; i++)
-        {
-            adjacencyMatrix[i] = new T[size_];
-            for (int j = 0; j < size_; j++)
-            {
-                adjacencyMatrix[i][j] = T();
-            }
-        }
-    }
-
-public:
-    GraphMatrix(int size, bool directional)
-    {
-        size_ = size;
-        directional_ = directional;
-        adjacencyMatrix = new T *[size];
-        fillAdjancets();
-    }
-
-    ~GraphMatrix()
-    {
-        for (int i = 0; i < size_; i++)
-        {
-            delete[] adjacencyMatrix[i];
-        }
-        delete[] adjacencyMatrix;
-    }
-
-    T **matrix() { return adjacencyMatrix; }
-
-    int size() { return size_; }
-
-    void addEdge(int from, int to, T weight)
-    {
-        adjacencyMatrix[from][to] = weight;
-        if (!directional_)
-        {
-            adjacencyMatrix[to][from] = weight;
-        }
-    }
-
-    void removeEdge(int from, int to)
-    {
-        adjacencyMatrix[from][to] = T();
-        if (!directional_)
-        {
-            adjacencyMatrix[to][from] = T();
-        }
-    }
-
-    T getEdge(int from, int to)
-    {
-        return adjacencyMatrix[from][to];
-    }
-
-    T *getAdjacent(int from)
-    {
-        return adjacencyMatrix[from];
-    }
 };
 
 template <typename T>
@@ -358,6 +302,15 @@ public:
         return adjacencyList[from].search(to);
     }
 
+    void updateEdge(int from, int to, T weight)
+    {
+        adjacencyList[from].update(to, weight);
+        if (!directional_)
+        {
+            adjacencyList[to].update(from, weight);
+        }
+    }
+
     T *getAdjacent(int from)
     {
         return adjacencyList[from].list();
@@ -371,54 +324,80 @@ class Graph
 {
 private:
     IGraphStructure<T> *graph;
+    int *rank, *representative;
 
-    void dfs(int vertex, bool *visited, int *antecessor)
+    void makeSet()
     {
-        visited[vertex] = true;
-        T *adjacents = graph->getAdjacent(vertex);
         int size = graph->size();
+        representative = new int[size];
+        rank = new int[size];
         for (int i = 0; i < size; i++)
         {
-            if (!visited[i] && adjacents[i])
-            {
-                antecessor[i] = vertex;
-                dfs(i, visited, antecessor);
-            }
+            rank[i] = -1;
+            representative[i] = i;
         }
-        delete[] adjacents;
     }
 
-    void relax(int startVertex, int endVertex, T *distance, int *antecessor, Heap<Node<T> *> *heap)
+    int find_(int vertex)
     {
-        T weight = graph->getEdge(startVertex, endVertex);
-        if (distance[endVertex] > distance[startVertex] + weight)
+        if (representative[vertex] != vertex)
         {
-            distance[endVertex] = distance[startVertex] + weight;
-            heap->insert(new Node<T>{endVertex, distance[endVertex], nullptr, nullptr});
-            antecessor[endVertex] = startVertex;
+            representative[vertex] = find_(representative[vertex]);
+        }
+
+        return representative[vertex];
+    }
+
+    void union_(int vertexFrom, int vertexTo)
+    {
+        int vertexFromRepresentative = find_(vertexFrom);
+        int vertexToRepresentative = find_(vertexTo);
+
+        if (vertexFromRepresentative == vertexToRepresentative)
+            return;
+
+        if (rank[vertexFromRepresentative] < rank[vertexToRepresentative])
+        {
+            representative[vertexFromRepresentative] = vertexToRepresentative;
+        }
+        else if (rank[vertexFromRepresentative] > rank[vertexToRepresentative])
+        {
+            representative[vertexToRepresentative] = vertexFromRepresentative;
+        }
+        else
+        {
+            representative[vertexToRepresentative] = vertexFromRepresentative;
+            rank[vertexFromRepresentative] = rank[vertexFromRepresentative] + 1;
         }
     }
 
 public:
-    Graph(int size, bool isMatrix, bool isDirectional)
+    Graph(int size, bool isDirectional)
     {
-        if (isMatrix)
-        {
-            graph = new GraphMatrix<T>(size, isDirectional);
-        }
-        else
-        {
-            graph = new GraphList<T>(size, isDirectional);
-        }
+        graph = new GraphList<T>(size, isDirectional);
+        makeSet();
     }
     ~Graph()
     {
         delete graph;
+        delete rank;
+        delete representative;
+    }
+
+    int find(int vertex)
+    {
+        return find_(vertex);
     }
 
     void addEdge(int from, int to, T weight)
     {
         graph->addEdge(from, to, weight);
+        union_(from, to);
+    }
+
+    void updateEdge(int from, int to, T weight)
+    {
+        graph->updateEdge(from, to, weight);
     }
 
     void removeEdge(int from, int to)
@@ -492,20 +471,76 @@ public:
 
         return count;
     }
+
+    T kruskal()
+    {
+        struct HeapNode
+        {
+            int from;
+            int to;
+            T value;
+        };
+
+        int totalWeight = 0;
+        int size = graph->size();
+
+        Graph<T> *mst = new Graph<T>(size, false);
+        Heap<HeapNode *> *heap = new Heap<HeapNode *>(size * size * size);
+
+        for (int i = 0; i < size; i++)
+        {
+            T *adjacents = graph->getAdjacent(i);
+
+            for (int j = 0; j < size; j++)
+            {
+                if (adjacents[j])
+                {
+                    heap->insert(new HeapNode{i, j, adjacents[j]});
+                }
+            }
+
+            delete[] adjacents;
+        }
+        while (heap->size() > 0)
+        {
+            auto value = heap->critical();
+
+            int from = value->from;
+            int to = value->to;
+            if (mst->find(from) != mst->find(to))
+            {
+                mst->addEdge(from, to, value->value);
+                totalWeight += value->value;
+            }
+
+            delete value;
+        }
+        delete heap;
+        delete mst;
+
+        return totalWeight;
+    }
 };
 
 int main()
 {
     int size, edges;
     cin >> size >> edges;
-    Graph<int> *graph = new Graph<int>(size, false, true);
+    Graph<int> *graph = new Graph<int>(size, true);
     for (int i = 0; i < edges; i++)
     {
         int from, to, weight;
         cin >> from >> to >> weight;
-        graph->addEdge(from, to, weight);
+        if (from != to)
+        {
+            int prevWeight = graph->getEdge(from, to);
+            if (prevWeight)
+                graph->updateEdge(from, to, weight);
+            else
+                graph->addEdge(from, to, weight);
+        }
     }
-    cout << graph->primCount() << endl;
+    cout << graph->kruskal() << endl;
 
     delete graph;
     return 0;

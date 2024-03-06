@@ -136,7 +136,7 @@ public:
         return temp;
     }
 
-    int parent(int index)
+    int representative(int index)
     {
         return (index - index % 2) / 2;
     }
@@ -168,12 +168,12 @@ public:
         size_++;
         heap_[size_] = item;
         int index = size_;
-        while (index > 0 && heap_[parent(index)]->value > heap_[index]->value)
+        while (index > 0 && heap_[representative(index)]->value > heap_[index]->value)
         {
             T temp = heap_[index];
-            heap_[index] = heap_[parent(index)];
-            heap_[parent(index)] = temp;
-            index = parent(index);
+            heap_[index] = heap_[representative(index)];
+            heap_[representative(index)] = temp;
+            index = representative(index);
         }
     }
 
@@ -188,7 +188,7 @@ public:
 
     void buildMinHeap()
     {
-        int middle = parent(maxSize - 1);
+        int middle = representative(maxSize - 1);
         for (int i = middle; i >= 0; i--)
         {
             minHeapify(i);
@@ -371,57 +371,57 @@ class Graph
 {
 private:
     IGraphStructure<T> *graph;
-    int *rank, *parent;
+    int *rank, *representative;
     bool isDisjointSet;
 
     void makeSet()
     {
         int size = graph->size();
-        parent = new int[size];
+        representative = new int[size];
         rank = new int[size];
         memset(rank, -1, size);
         for (int i = 0; i < size; i++)
         {
-            parent[i] = i;
+            representative[i] = i;
         }
     }
 
-    int find_(int x)
+    int find_(int vertex)
     {
-        if (parent[x] != x)
+        if (representative[vertex] != vertex)
         {
-            parent[x] = find_(parent[x]);
+            representative[vertex] = find_(representative[vertex]);
         }
 
-        return parent[x];
+        return representative[vertex];
     }
 
-    void union_(int x, int y)
+    void union_(int vertexFrom, int vertexTo)
     {
-        int xset = find_(x);
-        int yset = find_(y);
+        int vertexFromRepresentative = find_(vertexFrom);
+        int vertexToRepresentative = find_(vertexTo);
 
-        if (xset == yset)
+        if (vertexFromRepresentative == vertexToRepresentative)
             return;
 
-        if (rank[xset] < rank[yset])
+        if (rank[vertexFromRepresentative] < rank[vertexToRepresentative])
         {
-            parent[xset] = yset;
+            representative[vertexFromRepresentative] = vertexToRepresentative;
         }
-        else if (rank[xset] > rank[yset])
+        else if (rank[vertexFromRepresentative] > rank[vertexToRepresentative])
         {
-            parent[yset] = xset;
+            representative[vertexToRepresentative] = vertexFromRepresentative;
         }
         else
         {
-            parent[yset] = xset;
-            rank[xset] = rank[xset] + 1;
+            representative[vertexToRepresentative] = vertexFromRepresentative;
+            rank[vertexFromRepresentative] = rank[vertexFromRepresentative] + 1;
         }
     }
 
     void disunion_(int vertex)
     {
-        parent[vertex] = vertex;
+        representative[vertex] = vertex;
     }
 
     void dfs(int vertex, bool *visited, int *antecessor)
@@ -475,7 +475,7 @@ public:
         if (isDisjointSet)
         {
             delete rank;
-            delete parent;
+            delete representative;
         }
     }
 
@@ -616,8 +616,10 @@ public:
         int size = graph->size();
 
         Graph<T> *mst = new Graph<T>(size, isMatrix, isDirectional, isDisjointSet);
+        bool *visited = new bool[size];
         antecessorStruct **antecessor = new antecessorStruct *[size];
         Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
+        memset(visited, false, size);
 
         for (int i = 0; i < size; i++)
         {
@@ -628,12 +630,14 @@ public:
 
         while (heap->size() > 0)
         {
-            int node = heap->critical()->key;
+            auto value = heap->critical();
+            int node = value->key;
+            visited[node] = true;
 
             T *adjacents = graph->getAdjacent(node);
             for (int j = 0; j < size; j++)
             {
-                if (adjacents[j])
+                if (adjacents[j] && !visited[j])
                 {
                     T weight = graph->getEdge(node, j);
                     if (antecessor[j]->weight > weight)
@@ -644,6 +648,8 @@ public:
                     }
                 }
             }
+            delete value;
+            delete[] adjacents;
         }
         for (int i = 0; i < size; i++)
         {
@@ -654,8 +660,42 @@ public:
         }
 
         delete[] antecessor;
+        delete[] visited;
         delete heap;
 
+        return mst;
+    }
+
+    Graph<T> *kruskal()
+    {
+        int size = graph->size();
+        Graph<T> *mst = new Graph<T>(size, false, false, true);
+        Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
+        for (int i = 0; i < size; i++)
+        {
+            T *adjacents = graph->getAdjacent(i);
+            for (int j = 0; j < size; j++)
+            {
+                if (adjacents[j])
+                {
+                    heap->insert(new Node<T>{i, adjacents[j], nullptr, nullptr});
+                }
+            }
+            delete[] adjacents;
+        }
+        while (heap->size() > 0)
+        {
+            auto value = heap->critical();
+            int from = value->key;
+            int to = value->value;
+            if (mst->find(from) != mst->find(to))
+            {
+                mst->addEdge(from, to, value->value);
+                mst->union_(from, to);
+            }
+            delete value;
+        }
+        delete heap;
         return mst;
     }
 };
