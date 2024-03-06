@@ -578,13 +578,11 @@ public:
         int size = graph->size();
         int *antecessor = new int[size];
         T *distance = new T[size];
-        bool *visited = new bool[size];
         Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
         int loopState = 0;
         for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
         {
             antecessor[i] = -1;
-            visited[i] = false;
             distance[i] = INT_MAX;
         }
         distance[init] = 0;
@@ -593,7 +591,6 @@ public:
         {
             int node = heap->critical()->key;
 
-            visited[node] = true;
             T *adjacents = graph->getAdjacent(node);
             for (int j = 0; j < size; j++)
             {
@@ -604,7 +601,6 @@ public:
             }
         }
         delete heap;
-        delete[] visited;
         delete[] distance;
 
         return antecessor;
@@ -612,49 +608,53 @@ public:
 
     Graph<T> *prim(bool isMatrix = true, bool isDirectional = false)
     {
-        struct heapNode
+        struct antecessorStruct
         {
-            int startVertex;
-            int endVertex;
-            T value;
+            int antecessor;
+            T weight;
         };
-
         int size = graph->size();
-        int visitedCount = 0;
-        int vertex = 0;
 
         Graph<T> *mst = new Graph<T>(size, isMatrix, isDirectional, isDisjointSet);
-        bool *visited = new bool[size]{false};
-        heapNode *node;
-        Heap<heapNode *> *heap = new Heap<heapNode *>(size * size);
+        antecessorStruct **antecessor = new antecessorStruct *[size];
+        Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
 
-        do
+        for (int i = 0; i < size; i++)
         {
-            visited[vertex] = true;
-            visitedCount++;
-            T *adjacents = graph->getAdjacent(vertex);
-            for (int i = 0; i < size; i++)
+            antecessor[i] = new antecessorStruct{-1, INT_MAX};
+        }
+        antecessor[0]->weight = 0;
+        heap->insert(new Node<T>{0, 0, nullptr, nullptr});
+
+        while (heap->size() > 0)
+        {
+            int node = heap->critical()->key;
+
+            T *adjacents = graph->getAdjacent(node);
+            for (int j = 0; j < size; j++)
             {
-                if (adjacents[i] && !visited[i])
+                if (adjacents[j])
                 {
-                    heap->insert(new heapNode{vertex, i, adjacents[i]});
+                    T weight = graph->getEdge(node, j);
+                    if (antecessor[j]->weight > weight)
+                    {
+                        heap->insert(new Node<T>{j, weight, nullptr, nullptr});
+                        antecessor[j]->antecessor = node;
+                        antecessor[j]->weight = weight;
+                    }
                 }
             }
-            bool flag = true;
-            do
+        }
+        for (int i = 0; i < size; i++)
+        {
+            if (antecessor[i]->antecessor != -1)
             {
-                node = heap->critical();
-                if (!visited[node->endVertex])
-                {
-                    mst->addEdge(node->startVertex, node->endVertex, node->value);
-                    vertex = node->endVertex;
-                    flag = false;
-                }
-            } while (heap->size() > 0 && flag);
-        } while (visitedCount < size);
+                mst->addEdge(antecessor[i]->antecessor, i, antecessor[i]->weight);
+            }
+        }
 
+        delete[] antecessor;
         delete heap;
-        delete[] visited;
 
         return mst;
     }

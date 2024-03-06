@@ -1,5 +1,5 @@
 #include <iostream>
-
+#define INT_MAX 2147483647
 using namespace std;
 
 template <typename T>
@@ -436,109 +436,61 @@ public:
         return graph->getAdjacent(from);
     }
 
-    int *deepSearch(int init = 0)
+    T primCount()
     {
+        struct antecessorStruct
+        {
+            int antecessor;
+            T weight;
+        };
         int size = graph->size();
-        bool *visited = new bool[size];
-        int *antecessor = new int[size];
+
+        antecessorStruct **antecessor = new antecessorStruct *[size];
+        Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
+
         for (int i = 0; i < size; i++)
         {
-            visited[i] = false;
-            antecessor[i] = -1;
+            antecessor[i] = new antecessorStruct{-1, INT_MAX};
         }
-        int loopState = 0;
-        for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
-        {
-            if (!visited[i])
-            {
-                dfs(i, visited, antecessor);
-            }
-        }
-        delete[] visited;
-        return antecessor;
-    }
+        antecessor[0]->weight = 0;
+        heap->insert(new Node<T>{0, 0, nullptr, nullptr});
 
-    int barrowGetWeight(int init = 0)
-    {
-        int size = graph->size();
-        bool *visited = new bool[size]{false};
-        int totalWeight = 0;
-        LinkedList<int> *queue = new LinkedList<int>();
-        int loopState = 0;
-        for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
+        while (heap->size() > 0)
         {
-            if (!visited[i])
+            int node = heap->critical()->key;
+            cout << node << endl;
+
+            T *adjacents = graph->getAdjacent(node);
+            for (int j = 0; j < size; j++)
             {
-                queue->push(i, i);
-                visited[i] = true;
-                while (queue->size() > 0)
+                if (adjacents[j])
                 {
-                    int vertex = queue->shift();
-                    T *adjacents = graph->getAdjacent(vertex);
-                    for (int i = 0; i < size; i++)
+                    T weight = graph->getEdge(node, j);
+                    if (antecessor[j]->weight > weight)
                     {
-                        if (!visited[i] && adjacents[i])
-                        {
-                            visited[i] = true;
-                            totalWeight += graph->getEdge(vertex, i);
-                            queue->push(i, i);
-                        }
+                        heap->insert(new Node<T>{j, weight, nullptr, nullptr});
+                        antecessor[j]->antecessor = node;
+                        antecessor[j]->weight = weight;
                     }
                 }
             }
+            delete[] adjacents;
+            cout << endl;
         }
-        delete queue;
-        delete[] visited;
-        return totalWeight;
-    }
-
-    Graph<T> *prim(bool isMatrix = true)
-    {
-        struct heapNode
+        T count = 0;
+        for (int i = 0; i < size; i++)
         {
-            int startVertex;
-            int endVertex;
-            T value;
-        };
-
-        int size = graph->size();
-        int visitedCount = 0;
-        int vertex = 0;
-
-        Graph<T> *mst = new Graph<T>(size, isMatrix, true);
-        bool *visited = new bool[size]{false};
-        heapNode *node;
-        Heap<heapNode *> *heap = new Heap<heapNode *>(size * size);
-
-        do
-        {
-            visited[vertex] = true;
-            visitedCount++;
-            T *adjacents = graph->getAdjacent(vertex);
-            for (int i = 0; i < size; i++)
+            if (antecessor[i]->antecessor != -1)
             {
-                if (adjacents[i] && !visited[i])
-                {
-                    heap->insert(new heapNode{vertex, i, adjacents[i]});
-                }
+                cout << antecessor[i]->antecessor << " to " << i << " " << antecessor[i]->weight << endl;
+                count += antecessor[i]->weight;
             }
-            bool flag = true;
-            do
-            {
-                node = heap->critical();
-                if (!visited[node->endVertex])
-                {
-                    mst->addEdge(node->startVertex, node->endVertex, node->value);
-                    vertex = node->endVertex;
-                    flag = false;
-                }
-            } while (heap->size() > 0 && flag);
-        } while (visitedCount < size);
+        }
 
+        delete[] antecessor;
         delete heap;
-        delete[] visited;
 
-        return mst;
+        return count;
     }
 };
 
@@ -553,10 +505,8 @@ int main()
         cin >> from >> to >> weight;
         graph->addEdge(from, to, weight);
     }
-    Graph<int> *mst = graph->prim(false);
-    cout << mst->barrowGetWeight() << endl;
+    cout << graph->primCount() << endl;
 
     delete graph;
-    delete mst;
     return 0;
 }
