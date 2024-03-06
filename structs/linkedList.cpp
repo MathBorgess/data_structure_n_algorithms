@@ -136,6 +136,5 @@ public:
             node = node->next;
             delete temp;
         }
-        delete node;
     }
 };

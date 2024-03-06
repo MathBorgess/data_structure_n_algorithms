@@ -109,7 +109,6 @@ public:
             node = node->next;
             delete temp;
         }
-        delete node;
     }
 };
 
@@ -228,6 +227,7 @@ public:
     virtual T *getAdjacent(int from) = 0;
     virtual int size() = 0;
     virtual T **matrix() = 0;
+    virtual ~IGraphStructure() {}
 };
 
 template <typename T>
@@ -371,6 +371,58 @@ class Graph
 {
 private:
     IGraphStructure<T> *graph;
+    int *rank, *parent;
+    bool isDisjointSet;
+
+    void makeSet()
+    {
+        int size = graph->size();
+        parent = new int[size];
+        rank = new int[size];
+        memset(rank, -1, size);
+        for (int i = 0; i < size; i++)
+        {
+            parent[i] = i;
+        }
+    }
+
+    int find_(int x)
+    {
+        if (parent[x] != x)
+        {
+            parent[x] = find_(parent[x]);
+        }
+
+        return parent[x];
+    }
+
+    void union_(int x, int y)
+    {
+        int xset = find_(x);
+        int yset = find_(y);
+
+        if (xset == yset)
+            return;
+
+        if (rank[xset] < rank[yset])
+        {
+            parent[xset] = yset;
+        }
+        else if (rank[xset] > rank[yset])
+        {
+            parent[yset] = xset;
+        }
+        else
+        {
+            parent[yset] = xset;
+            rank[xset] = rank[xset] + 1;
+        }
+    }
+
+    void disunion_(int vertex)
+    {
+        parent[vertex] = vertex;
+    }
 
     void dfs(int vertex, bool *visited, int *antecessor)
     {
@@ -400,7 +452,7 @@ private:
     }
 
 public:
-    Graph(int size, bool isMatrix, bool isDirectional)
+    Graph(int size, bool isMatrix, bool isDirectional, bool disjointSet = false)
     {
         if (isMatrix)
         {
@@ -410,20 +462,39 @@ public:
         {
             graph = new GraphList<T>(size, isDirectional);
         }
+        isDisjointSet = disjointSet;
+        if (isDisjointSet)
+        {
+            makeSet();
+        }
     }
+
     ~Graph()
     {
         delete graph;
+        if (isDisjointSet)
+        {
+            delete rank;
+            delete parent;
+        }
     }
 
     void addEdge(int from, int to, T weight)
     {
         graph->addEdge(from, to, weight);
+        if (isDisjointSet)
+        {
+            union_(from, to);
+        }
     }
 
     void removeEdge(int from, int to)
     {
         graph->removeEdge(from, to);
+        if (isDisjointSet)
+        {
+            disunion_(from, to);
+        }
     }
 
     T getEdge(int from, int to)
@@ -436,7 +507,12 @@ public:
         return graph->getAdjacent(from);
     }
 
-    int *deepSearch()
+    int find(int vertex)
+    {
+        return find_(vertex);
+    }
+
+    int *deepSearch(int init = 0)
     {
         int size = graph->size();
         bool *visited = new bool[size];
@@ -446,7 +522,8 @@ public:
             visited[i] = false;
             antecessor[i] = -1;
         }
-        for (int i = 0; i < size; i++)
+        int loopState = 0;
+        for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
         {
             if (!visited[i])
             {
@@ -502,7 +579,6 @@ public:
         int *antecessor = new int[size];
         T *distance = new T[size];
         bool *visited = new bool[size];
-        bool breaked = false;
         Heap<Node<T> *> *heap = new Heap<Node<T> *>(size * size * size);
         int loopState = 0;
         for (int i = init; loopState < size; i = (i + 1) % size, loopState++)
@@ -513,7 +589,7 @@ public:
         }
         distance[init] = 0;
         heap->insert(new Node<T>{init, 0, nullptr, nullptr});
-        while (heap->size() > 0 && !breaked)
+        while (heap->size() > 0)
         {
             int node = heap->critical()->key;
 
@@ -534,36 +610,28 @@ public:
         return antecessor;
     }
 
-    IGraphStructure<T> *prim(bool isMatrix = true)
+    Graph<T> *prim(bool isMatrix = true, bool isDirectional = false)
     {
-        IGraphStructure<T> *mst;
-
-        int size = graph->size();
-        if (isMatrix)
-        {
-            mst = new GraphMatrix<T>(size, false);
-        }
-        else
-        {
-            mst = new GraphList<T>(size, false);
-        }
-
-        bool *visited = new bool[size]{false};
-        int visitedCount = 0;
-        int vertex = 0;
-
         struct heapNode
         {
             int startVertex;
             int endVertex;
             T value;
         };
-        Heap<heapNode *> *heap = new Heap<heapNode *>(pow(size, 2));
+
+        int size = graph->size();
+        int visitedCount = 0;
+        int vertex = 0;
+
+        Graph<T> *mst = new Graph<T>(size, isMatrix, isDirectional, isDisjointSet);
+        bool *visited = new bool[size]{false};
+        heapNode *node;
+        Heap<heapNode *> *heap = new Heap<heapNode *>(size * size);
+
         do
         {
             visited[vertex] = true;
             visitedCount++;
-            heapNode *node;
             T *adjacents = graph->getAdjacent(vertex);
             for (int i = 0; i < size; i++)
             {
@@ -575,7 +643,6 @@ public:
             bool flag = true;
             do
             {
-                flag = true;
                 node = heap->critical();
                 if (!visited[node->endVertex])
                 {
