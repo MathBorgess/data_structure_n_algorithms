@@ -12,121 +12,6 @@ struct Node
 };
 
 template <typename T>
-class LinkedList
-{
-private:
-    Node<T> sentinel = {0, T(), nullptr, nullptr};
-    int size_ = 0;
-    int maxSize_;
-
-public:
-    LinkedList()
-    {
-        sentinel.next = &sentinel;
-        sentinel.prev = &sentinel;
-    }
-
-    void updateMaxSize(int maxSize)
-    {
-        maxSize_ = maxSize;
-    }
-
-    Node<T> *makeNode(int key, T item)
-    {
-        return new Node<T>{key, item, nullptr, nullptr};
-    }
-
-    T shift()
-    {
-        sentinel.next->next->prev = &sentinel;
-        Node<T> *item = sentinel.next;
-        sentinel.next = sentinel.next->next;
-        size_--;
-        return item->key;
-    }
-
-    T remove(int key)
-    {
-        Node<T> *node = sentinel.next;
-        while (node != nullptr && node != &sentinel && node->key != key)
-        {
-            node = node->next;
-        }
-        if (node == nullptr || node == &sentinel)
-        {
-            return T();
-        }
-        node->prev->next = node->next;
-        node->next->prev = node->prev;
-        size_--;
-        return node->value;
-    }
-
-    T search(int key)
-    {
-        Node<T> *node = sentinel.next;
-        while (node != nullptr && node != &sentinel && node->key != key)
-        {
-            node = node->next;
-        }
-        if (node == nullptr || node == &sentinel)
-        {
-            return 0;
-        }
-        return node->value;
-    }
-
-    void update(int key, T value)
-    {
-        Node<T> *node = sentinel.next;
-        while (node != nullptr && node != &sentinel && node->key != key)
-        {
-            node = node->next;
-        }
-        if (node == nullptr || node == &sentinel)
-        {
-            return;
-        }
-        node->value = value;
-    }
-
-    T *list()
-    {
-        T *list = new T[maxSize_ ? maxSize_ : size_]{0};
-        Node<T> *node = sentinel.next;
-        for (int i = 0; i < size_; i++)
-        {
-            list[node->key] = node->value;
-            node = node->next;
-        }
-        return list;
-    }
-
-    void push(int key, T weight)
-    {
-        Node<T> *node = makeNode(key, weight);
-        node->next = &sentinel;
-        node->prev = sentinel.prev;
-        sentinel.prev->next = node;
-        sentinel.prev = node;
-        size_++;
-    }
-
-    int size() const { return size_; }
-
-    ~LinkedList()
-    {
-        Node<T> *node = sentinel.next;
-        while (node != nullptr && node != &sentinel)
-        {
-            Node<T> *temp = node;
-            node = node->next;
-            delete temp;
-        }
-    }
-};
-
-template <typename T>
 class Heap
 {
 private:
@@ -238,7 +123,6 @@ public:
     virtual void addEdge(int from, int to, T weight) = 0;
     virtual void removeEdge(int from, int to) = 0;
     virtual T getEdge(int from, int to) = 0;
-    virtual void updateEdge(int from, int to, T weight) = 0;
     virtual T *getAdjacent(int from) = 0;
     virtual int size() = 0;
     virtual T **matrix() = 0;
@@ -246,77 +130,74 @@ public:
 };
 
 template <typename T>
-class GraphList : public IGraphStructure<T>
+class GraphMatrix : public IGraphStructure<T>
 {
 private:
     int size_;
     bool directional_;
-    LinkedList<T> *adjacencyList;
+    T **adjacencyMatrix;
+
+    void fillAdjancets()
+    {
+        for (int i = 0; i < size_; i++)
+        {
+            adjacencyMatrix[i] = new T[size_];
+            for (int j = 0; j < size_; j++)
+            {
+                adjacencyMatrix[i][j] = T();
+            }
+        }
+    }
 
 public:
-    GraphList(int size, bool directional)
+    GraphMatrix(int size, bool directional)
     {
         size_ = size;
         directional_ = directional;
-        adjacencyList = new LinkedList<T>[size];
-        for (int i = 0; i < size; i++)
-        {
-            adjacencyList[i].updateMaxSize(size);
-        }
-    }
-    ~GraphList()
-    {
-        delete[] adjacencyList;
+        adjacencyMatrix = new T *[size];
+        fillAdjancets();
     }
 
-    T **matrix()
+    ~GraphMatrix()
     {
-        T **matrix = new T *[size_];
         for (int i = 0; i < size_; i++)
         {
-            matrix[i] = adjacencyList[i].list();
+            delete[] adjacencyMatrix[i];
         }
-        return matrix;
+        delete[] adjacencyMatrix;
     }
+
+    T **matrix() { return adjacencyMatrix; }
+
+    int size() { return size_; }
 
     void addEdge(int from, int to, T weight)
     {
-        adjacencyList[from].push(to, weight);
+        adjacencyMatrix[from][to] = weight;
         if (!directional_)
         {
-            adjacencyList[to].push(from, weight);
+            adjacencyMatrix[to][from] = weight;
         }
     }
 
     void removeEdge(int from, int to)
     {
-        adjacencyList[from].remove(to);
+        adjacencyMatrix[from][to] = T();
         if (!directional_)
         {
-            adjacencyList[to].remove(from);
+            adjacencyMatrix[to][from] = T();
         }
     }
 
     T getEdge(int from, int to)
     {
-        return adjacencyList[from].search(to);
-    }
-
-    void updateEdge(int from, int to, T weight)
-    {
-        adjacencyList[from].update(to, weight);
-        if (!directional_)
-        {
-            adjacencyList[to].update(from, weight);
-        }
+        return adjacencyMatrix[from][to];
     }
 
     T *getAdjacent(int from)
     {
-        return adjacencyList[from].list();
+        return adjacencyMatrix[from];
     }
-
-    int size() { return size_; }
 };
 
 template <typename T>
@@ -374,7 +255,7 @@ private:
 public:
     Graph(int size, bool isDirectional)
     {
-        graph = new GraphList<T>(size, isDirectional);
+        graph = new GraphMatrix<T>(size, isDirectional);
         makeSet();
     }
     ~Graph()
@@ -472,7 +353,7 @@ public:
         return count;
     }
 
-    T kruskal()
+    T kruskal(int heapSize)
     {
         struct HeapNode
         {
@@ -485,7 +366,7 @@ public:
         int size = graph->size();
 
         Graph<T> *mst = new Graph<T>(size, false);
-        Heap<HeapNode *> *heap = new Heap<HeapNode *>(size * size * size);
+        Heap<HeapNode *> *heap = new Heap<HeapNode *>(heapSize);
 
         for (int i = 0; i < size; i++)
         {
@@ -498,8 +379,6 @@ public:
                     heap->insert(new HeapNode{i, j, adjacents[j]});
                 }
             }
-
-            delete[] adjacents;
         }
         while (heap->size() > 0)
         {
@@ -533,14 +412,10 @@ int main()
         cin >> from >> to >> weight;
         if (from != to)
         {
-            int prevWeight = graph->getEdge(from, to);
-            if (prevWeight)
-                graph->updateEdge(from, to, weight);
-            else
-                graph->addEdge(from, to, weight);
+            graph->addEdge(from, to, weight);
         }
     }
-    cout << graph->kruskal() << endl;
+    cout << graph->kruskal(edges) << endl;
 
     delete graph;
     return 0;
